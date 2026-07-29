@@ -47,7 +47,7 @@
             <form onsubmit="handleLogin(event)" class="space-y-4 text-sm sm:text-base">
                 <div>
                     <label class="block text-gray-800 font-bold mb-1.5">ชื่อผู้ใช้งาน (Username) *</label>
-                    <input type="text" id="login-username" required placeholder="admin หรือ coach" class="w-full p-3 border border-gray-300 rounded-xl font-medium outline-none focus:border-[#B39250]">
+                    <input type="text" id="login-username" required placeholder="admin หรือ coach" class="w-full p-3 border border-gray-300 rounded-xl font-light outline-none focus:border-[#B39250]">
                 </div>
                 <div>
                     <label class="block text-gray-800 font-bold mb-1.5">รหัสผ่าน (Password) *</label>
@@ -56,8 +56,8 @@
                 
                 <div class="bg-amber-50 p-3.5 rounded-2xl border border-amber-200 text-xs sm:text-sm text-amber-900 space-y-1 font-mono">
                     <p class="font-bold text-amber-950">🔑 รหัสผ่านทดสอบเบื้องต้น:</p>
-                    <p>• แอดมิน: admin / admin123</p>
-                    <p>• โค้ช: coach / coach123</p>
+                    <p class="font-light">• แอดมิน: admin / admin123</p>
+                    <p class="font-light">• โค้ช: coach / coach123</p>
                 </div>
 
                 <button type="submit" class="w-full py-3.5 bg-[#1A1A1A] hover:bg-[#333] text-white rounded-2xl font-bold text-base transition-all shadow-md">
@@ -78,20 +78,20 @@
                     </div>
                     <div>
                         <h1 class="text-white font-serif-custom font-bold text-lg sm:text-xl tracking-wider">THE GALLERY HOUSE</h1>
-                        <p class="text-[#B39250] text-xs font-mono tracking-widest uppercase">BACKEND CONTROL PORTAL</p>
+                        <p class="text-[#B39250] text-xs font-mono tracking-widest uppercase font-light">BACKEND CONTROL PORTAL</p>
                     </div>
                 </div>
 
                 <!-- Tabs Navigation -->
                 <div class="flex items-center gap-3 w-full md:w-auto justify-between md:justify-end">
                     <nav class="flex bg-[#262626] p-1 rounded-xl border border-[#B39250]/20 text-xs sm:text-sm">
-                        <button onclick="switchTab('admin')" id="btn-tab-admin" class="px-3.5 sm:px-4 py-2 sm:py-2.5 font-semibold rounded-lg transition-all bg-[#B39250] text-[#1A1A1A]">
+                        <button onclick="switchTab('admin')" id="btn-tab-admin" class="px-3.5 sm:px-4 py-2 sm:py-2.5 font-bold rounded-lg transition-all bg-[#B39250] text-[#1A1A1A]">
                             📊 1. แอดมิน (Admin)
                         </button>
-                        <button onclick="switchTab('coach')" id="btn-tab-coach" class="px-3.5 sm:px-4 py-2 sm:py-2.5 font-semibold rounded-lg transition-all text-gray-400 hover:text-white">
+                        <button onclick="switchTab('coach')" id="btn-tab-coach" class="px-3.5 sm:px-4 py-2 sm:py-2.5 font-bold rounded-lg transition-all text-gray-400 hover:text-white">
                             👨‍🏫 2. ตารางโค้ช (Coach)
                         </button>
-                        <button onclick="switchTab('weekly')" id="btn-tab-weekly" class="px-3.5 sm:px-4 py-2 sm:py-2.5 font-semibold rounded-lg transition-all text-gray-400 hover:text-white">
+                        <button onclick="switchTab('weekly')" id="btn-tab-weekly" class="px-3.5 sm:px-4 py-2 sm:py-2.5 font-bold rounded-lg transition-all text-gray-400 hover:text-white">
                             📈 3. สรุปรายสัปดาห์ (Weekly)
                         </button>
                     </nav>
@@ -129,6 +129,52 @@
                     <!-- Metrics rendered dynamically -->
                 </div>
 
+                <!-- ADMIN PRICING & SERVICE FEES MANAGER -->
+                <div class="bg-white p-4 sm:p-6 rounded-3xl border border-gray-200 space-y-4 shadow-sm">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b border-gray-100 pb-3">
+                        <div>
+                            <h4 class="font-bold text-sm sm:text-base text-gray-900">💰 ตั้งค่ายอดราคาบริการ และเปิด/ปิดการใช้งานโค้ช</h4>
+                            <p class="text-xs text-gray-500 font-light mt-0.5">ปรับเปลี่ยนราคาค่าสนาม ค่าบริการเสริม และเปิด/ปิดโค้ชรายบุคคล</p>
+                        </div>
+                        <button onclick="savePricingSettings()" class="px-5 py-2.5 bg-[#1A1A1A] hover:bg-[#333] text-white rounded-xl font-bold text-xs sm:text-sm transition-all shadow">
+                            💾 บันทึกราคาและโค้ช
+                        </button>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <!-- Court & Equipment Pricing -->
+                        <div class="bg-amber-50/50 p-4 rounded-2xl border border-amber-200 space-y-3 text-xs sm:text-sm">
+                            <h5 class="font-bold text-amber-950 text-sm">🎾 อัตราค่าสนามและอุปกรณ์เสริม (บาท/ชม.)</h5>
+                            <div class="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label class="block text-gray-700 font-bold mb-1">วันธรรมดา (Mon-Fri):</label>
+                                    <input type="number" id="cfg-rate-weekday" class="w-full p-2.5 bg-white border border-gray-300 rounded-xl font-bold outline-none">
+                                </div>
+                                <div>
+                                    <label class="block text-gray-700 font-bold mb-1">เสาร์-อาทิตย์/นักขัตฯ:</label>
+                                    <input type="number" id="cfg-rate-weekend" class="w-full p-2.5 bg-white border border-gray-300 rounded-xl font-bold text-amber-900 outline-none">
+                                </div>
+                                <div>
+                                    <label class="block text-gray-700 font-bold mb-1">ค่าน็อคเกอร์ (Knocker):</label>
+                                    <input type="number" id="cfg-rate-knocker" class="w-full p-2.5 bg-white border border-gray-300 rounded-xl font-bold outline-none">
+                                </div>
+                                <div>
+                                    <label class="block text-gray-700 font-bold mb-1">ค่าเครื่องยิงบอล:</label>
+                                    <input type="number" id="cfg-rate-[#B39250]" class="w-full p-2.5 bg-white border border-gray-300 rounded-xl font-bold outline-none">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Coaches Price & Status Toggle -->
+                        <div class="bg-emerald-50/50 p-4 rounded-2xl border border-emerald-200 space-y-3 text-xs sm:text-sm">
+                            <h5 class="font-bold text-emerald-950 text-sm">👨‍🏫 จัดการสถานะโค้ช และค่าสอน (บาท/ชม.)</h5>
+                            <div id="coach-settings-list" class="space-y-2.5">
+                                <!-- Coach controls rendered dynamically -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- ADMIN OPERATING HOURS SETTING -->
                 <div class="bg-amber-50/80 p-4 sm:p-6 rounded-3xl border border-amber-200 space-y-3 shadow-sm">
                     <h4 class="font-bold text-sm sm:text-base text-amber-950">⏰ ตั้งค่าเวลาเปิด - ปิดสนาม (Court Operating Hours)</h4>
@@ -164,17 +210,17 @@
                     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
                         <div>
                             <h4 class="font-bold text-sm sm:text-base text-rose-950">🔒 บล็อกปิดช่วงเวลาสนาม (คลิกปุ่มเพื่อสลับสถานะ / คลิกคิว Pending เพื่อดูสลิป)</h4>
-                            <p class="text-xs text-rose-700 mt-0.5">คลิกที่ช่วงเวลาเพื่อเปิด/ปิดสนาม หรือกดดูสลิปของคิวที่รออนุมัติ</p>
+                            <p class="text-xs text-rose-700 font-light mt-0.5">คลิกที่ช่วงเวลาเพื่อเปิด/ปิดสนาม หรือกดดูสลิปของคิวที่รออนุมัติ</p>
                         </div>
                         <div class="flex items-center gap-2 w-full sm:w-auto">
                             <span class="text-xs sm:text-sm text-gray-800 font-bold shrink-0">วันที่:</span>
-                            <input type="date" id="admin-close-date" onchange="onAdminCloseDateChange(this.value)" class="w-full sm:w-auto p-2.5 bg-white border border-gray-300 rounded-xl text-xs sm:text-sm font-medium outline-none">
+                            <input type="date" id="admin-close-date" onchange="onAdminCloseDateChange(this.value)" class="w-full sm:w-auto p-2.5 bg-white border border-gray-300 rounded-xl text-xs sm:text-sm font-light outline-none">
                         </div>
                     </div>
 
                     <div class="bg-white p-3.5 rounded-2xl border border-rose-100 space-y-1">
                         <label class="block text-xs sm:text-sm text-gray-700 font-bold">หมายเหตุการปิดสนาม (จะบันทึกเมื่อกดบล็อกช่วงเวลา):</label>
-                        <input type="text" id="admin-close-reason-input" value="ปิดปรับปรุงสนาม / กิจกรรมพิเศษ" placeholder="เช่น ปรับปรุงไฟสนาม, กิจกรรมแข่ง VIP" class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl text-xs sm:text-sm outline-none focus:bg-white focus:border-rose-400 font-medium">
+                        <input type="text" id="admin-close-reason-input" value="ปิดปรับปรุงสนาม / กิจกรรมพิเศษ" placeholder="เช่น ปรับปรุงไฟสนาม, กิจกรรมแข่ง VIP" class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl text-xs sm:text-sm outline-none focus:bg-white focus:border-rose-400 font-light">
                     </div>
 
                     <div id="admin-slot-grid" class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2.5 pt-1">
@@ -184,7 +230,20 @@
 
                 <!-- BOOKINGS LIST TABLE (APPROVED) -->
                 <div class="bg-white p-4 sm:p-6 rounded-3xl border border-gray-200 space-y-4 shadow-sm">
-                    <h4 class="text-sm sm:text-base font-bold text-gray-900">📋 รายการคิวการจองที่ยืนยันแล้ว:</h4>
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-gray-100 pb-3">
+                        <div>
+                            <h4 class="text-sm sm:text-base font-bold text-gray-900">📋 รายการคิวการจองที่ยืนยันแล้ว (เฉพาะปัจจุบันและอนาคต):</h4>
+                            <p class="text-xs text-gray-500 font-light mt-0.5">เรียงจากคิวใกล้สุด (รายการที่ผ่านวันไปแล้วจะถูกซ่อนไว้ สามารถกด Export เพื่อดูประวัติทั้งหมดได้)</p>
+                        </div>
+                        <div class="flex items-center gap-2 w-full sm:w-auto justify-end">
+                            <button onclick="exportDatabaseJSON()" class="px-3.5 py-2 bg-gray-800 hover:bg-[#1A1A1A] text-white rounded-xl text-xs sm:text-sm font-bold transition-all shadow shrink-0">
+                                📥 Export JSON (Backup)
+                            </button>
+                            <button onclick="exportBookingsCSV()" class="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs sm:text-sm font-bold transition-all shadow shrink-0">
+                                📊 Export Excel (CSV)
+                            </button>
+                        </div>
+                    </div>
                     <div id="admin-booking-list" class="space-y-2.5 max-h-[350px] overflow-y-auto text-xs sm:text-sm">
                         <!-- Bookings rendered dynamically -->
                     </div>
@@ -194,16 +253,8 @@
             <!-- TAB 2: COACH VIEW & REALTIME SLOT EDITOR -->
             <div id="view-coach" class="hidden space-y-6">
                 <!-- Coach Selector -->
-                <div class="flex flex-wrap gap-2 border-b border-gray-200 pb-3">
-                    <button onclick="switchCoachTab('coach_gun')" id="c-tab-coach_gun" class="px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all bg-[#1A1A1A] text-white">
-                        👨‍🏫 Coach Gun
-                    </button>
-                    <button onclick="switchCoachTab('coach_nok')" id="c-tab-coach_nok" class="px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all bg-gray-100 text-gray-600">
-                        👩‍🏫 Coach Nok
-                    </button>
-                    <button onclick="switchCoachTab('coach_to')" id="c-tab-coach_to" class="px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all bg-gray-100 text-gray-600">
-                        🧢 Coach To
-                    </button>
+                <div class="flex flex-wrap gap-2 border-b border-gray-200 pb-3" id="coach-tab-buttons-container">
+                    <!-- Dynamic Coach tabs -->
                 </div>
 
                 <!-- Coach Info Badge -->
@@ -217,7 +268,7 @@
                         <h4 class="font-bold text-sm sm:text-base text-gray-900">🗓️ ตั้งค่าเวลาว่างรับสอน (คลิกที่ปุ่มเพื่อสลับสถานะ)</h4>
                         <div class="flex items-center gap-2 text-xs sm:text-sm w-full sm:w-auto">
                             <span class="text-gray-700 font-bold shrink-0">วันที่:</span>
-                            <input type="date" id="coach-schedule-date" onchange="onCoachDateChange()" class="w-full sm:w-auto p-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs sm:text-sm font-medium outline-none">
+                            <input type="date" id="coach-schedule-date" onchange="onCoachDateChange()" class="w-full sm:w-auto p-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs sm:text-sm font-light outline-none">
                         </div>
                     </div>
 
@@ -242,7 +293,7 @@
                 <div class="bg-white p-4 sm:p-6 rounded-3xl border border-gray-200 shadow-sm flex flex-col md:flex-row justify-between items-center gap-4">
                     <div>
                         <h3 class="font-bold text-base sm:text-lg text-gray-900">📈 รายงานสรุปยอดการจองรายสัปดาห์ (Weekly Dashboard)</h3>
-                        <p class="text-xs text-gray-500 mt-0.5" id="weekly-date-range-label">ประจำสัปดาห์: -</p>
+                        <p class="text-xs text-gray-500 font-light mt-0.5" id="weekly-date-range-label">ประจำสัปดาห์: -</p>
                     </div>
 
                     <div class="flex items-center gap-2">
@@ -276,14 +327,14 @@
                                     <th id="th-weekly-rev" class="p-3 text-right rounded-tr-xl">รายได้รวมสุทธิ</th>
                                 </tr>
                             </thead>
-                            <tbody id="weekly-type-breakdown-tbody" class="divide-y border-gray-100 font-medium">
+                            <tbody id="weekly-type-breakdown-tbody" class="divide-y border-gray-100 font-light">
                                 <!-- Rendered dynamically -->
                             </tbody>
                         </table>
                     </div>
                 </div>
 
-                <!-- FULL WEEKLY TIMETABLE MATRIX GRID -->
+                <!-- FULL WEEKLY TIMETABLE MATRIX GRID WITH MULTI-HOUR ROWSPAN -->
                 <div class="bg-white p-4 sm:p-6 rounded-3xl border border-gray-200 space-y-4 shadow-sm">
                     <div class="flex justify-between items-center">
                         <h4 class="font-bold text-sm sm:text-base text-gray-900">🗓️ ตารางผังการจองรวม 7 วัน</h4>
@@ -332,20 +383,20 @@
             <!-- BOOKING DETAILS -->
             <div class="bg-amber-50/70 p-4 rounded-2xl border border-amber-200 text-xs sm:text-sm space-y-2">
                 <div class="flex justify-between border-b border-amber-200/60 pb-1.5">
-                    <span class="text-gray-600">ผู้จอง:</span>
+                    <span class="text-gray-600 font-light">ผู้จอง:</span>
                     <span id="m-cust-name" class="font-bold text-gray-900">-</span>
                 </div>
                 <div class="flex justify-between border-b border-amber-200/60 pb-1.5">
-                    <span class="text-gray-600">ประเภท:</span>
+                    <span class="text-gray-600 font-light">ประเภท:</span>
                     <span id="m-booking-type" class="font-bold text-amber-900">-</span>
                 </div>
                 <div class="flex justify-between border-b border-amber-200/60 pb-1.5">
-                    <span class="text-gray-600">วันและเวลา:</span>
+                    <span class="text-gray-600 font-light">วันและเวลา:</span>
                     <span id="m-datetime" class="font-bold text-gray-900">-</span>
                 </div>
                 <div class="flex justify-between border-b border-amber-200/60 pb-1.5">
-                    <span class="text-gray-600">ระดับ/หมายเหตุ:</span>
-                    <span id="m-note" class="font-medium text-gray-800">-</span>
+                    <span class="text-gray-600 font-light">ระดับ/หมายเหตุ:</span>
+                    <span id="m-note" class="font-light text-gray-800">-</span>
                 </div>
                 <div class="flex justify-between pt-1 font-bold text-sm sm:text-base">
                     <span class="text-gray-900">ยอดเงินที่ต้องโอน:</span>
@@ -385,6 +436,14 @@
             try { localStorage.setItem(key, JSON.stringify(value)); } catch (e) {}
         }
 
+        function getTodayStr() {
+            const d = new Date();
+            const yyyy = d.getFullYear();
+            const mm = String(d.getMonth() + 1).padStart(2, '0');
+            const dd = String(d.getDate()).padStart(2, '0');
+            return `${yyyy}-${mm}-${dd}`;
+        }
+
         function formatDateThai(dateStr) {
             if (!dateStr) return '';
             const parts = dateStr.split('-');
@@ -401,6 +460,68 @@
                 case 'court_and_ballmachine': return 'เครื่องยิงบอล';
                 default: return 'เช่าสนามอย่างเดียว';
             }
+        }
+
+        function exportDatabaseJSON() {
+            const exportData = {
+                exportDate: new Date().toISOString(),
+                bookings: bookings,
+                adminClosedSlots: adminClosedSlots,
+                coachCustomAvailability: coachCustomAvailability,
+                courtOperatingHours: courtOperatingHours,
+                settings: settings
+            };
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportData, null, 2));
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", `gallery_database_backup_${getTodayStr()}.json`);
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+            showToast('ส่งออกสำรองข้อมูลฐานข้อมูล JSON เรียบร้อยแล้ว');
+        }
+
+        function exportBookingsCSV() {
+            if (!bookings || bookings.length === 0) {
+                showToast('ไม่มีข้อมูลรายการจองในระบบที่จะส่งออก', true);
+                return;
+            }
+
+            const headers = ["Booking ID", "Status", "Date", "Time Slot", "Duration (Hrs)", "Customer Name", "Phone", "Skill Level", "Note", "Booking Type", "Coach Name", "Court Price (THB)", "Coach Price (THB)", "Total Price (THB)", "Created At"];
+            
+            let csvContent = "\uFEFF"; // UTF-8 BOM for Excel Thai language support
+            csvContent += headers.map(h => `"${h}"`).join(",") + "\n";
+
+            bookings.forEach(b => {
+                const row = [
+                    b.bookingId || '',
+                    b.status || 'confirmed',
+                    b.date || '',
+                    b.timeSlot || '',
+                    b.bookingDuration || 1,
+                    b.bookedBy || '',
+                    b.customerPhone || '',
+                    b.customerSkill || '',
+                    b.customerNote || '',
+                    getBookingTypeDesc(b.bookingType),
+                    b.coachName || '-',
+                    b.courtPrice || 0,
+                    b.coachPrice || 0,
+                    b.totalPrice || 0,
+                    b.createdAt || ''
+                ];
+                csvContent += row.map(v => `"${String(v).replace(/"/g, '""')}"`).join(",") + "\n";
+            });
+
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.setAttribute("href", url);
+            link.setAttribute("download", `gallery_bookings_report_${getTodayStr()}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            showToast('ส่งออกรายงาน Excel (CSV) ภาษาไทยเรียบร้อยแล้ว');
         }
 
         function showToast(msg, isError = false) {
@@ -454,7 +575,6 @@
         let activeCoachViewTab = 'coach_gun';
         let coachScheduleDate = new Date().toISOString().split('T')[0];
         let adminCloseDate = new Date().toISOString().split('T')[0];
-
         let weeklyStartMondayStr = getMondayDateStr(new Date());
 
         let rawBookings = safeGetStorage('gallery_bookings', []);
@@ -463,6 +583,18 @@
         let adminClosedSlots = safeGetStorage('gallery_admin_closed_slots', {});
         let coachCustomAvailability = safeGetStorage('gallery_coach_availability', {});
         let courtOperatingHours = safeGetStorage('gallery_court_operating_hours', { startHour: 6, endHour: 22 });
+
+        let settings = safeGetStorage('gallery_settings', {
+            rateWeekday: 400,
+            rateWeekend: 500,
+            rateKnocker: 300,
+            rateBallMachine: 250,
+            coaches: [
+                { id: 'coach_gun', name: 'Coach Gun', title: 'PREMIUM COACH', price: 1700, active: true, availableDays: [0,1,2,3,4,5,6], avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80', daysText: 'สอนทุกวัน จันทร์ - อาทิตย์', desc: 'สอนทุกระดับ ตั้งแต่พื้นฐานถึงระดับสูง', studentText: 'รับนักเรียน : เดี่ยว / กลุ่ม (1-4 คน)' },
+                { id: 'coach_nok', name: 'Coach Nok', title: 'PROFESSIONAL COACH', price: 800, active: true, availableDays: [2,3,4], avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=200&q=80', daysText: 'สอนวัน อังคาร - พุธ - พฤหัสบดี', desc: 'สอนทุกระดับ ตั้งแต่พื้นฐานถึงระดับสูง', studentText: 'รับนักเรียน : เดี่ยว / กลุ่ม (1-4 คน)' },
+                { id: 'coach_to', name: 'Coach To', title: 'ASSISTANT COACH', price: 600, active: true, availableDays: [5,6,0], avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=80', daysText: 'สอนวัน ศุกร์ - เสาร์ - อาทิตย์', desc: 'สอนทุกระดับ ตั้งแต่พื้นฐานถึงระดับสูง', studentText: 'รับนักเรียน : เดี่ยว / กลุ่ม (1-5 คน)' }
+            ]
+        });
 
         const firebaseConfig = window.firebaseConfig || { apiKey: "YOUR_API_KEY" };
         let db = null;
@@ -475,12 +607,6 @@
                 useFirebase = true;
             }
         } catch (e) {}
-
-        const COACHES = [
-            { id: 'coach_gun', name: 'Coach Gun', title: 'PREMIUM COACH', price: 1700, availableDays: [0,1,2,3,4,5,6], badgeBg: 'bg-amber-100 text-amber-800', desc: 'สอนได้ทุกวัน | 1,700฿/ชม.' },
-            { id: 'coach_nok', name: 'Coach Nok', title: 'PROFESSIONAL COACH', price: 800, availableDays: [2,3,4], badgeBg: 'bg-blue-100 text-blue-800', desc: 'สอนอังคาร - พฤหัสบดี | 800฿/ชม.' },
-            { id: 'coach_to', name: 'Coach To', title: 'ASSISTANT COACH', price: 600, availableDays: [5,6,0], badgeBg: 'bg-emerald-100 text-emerald-800', desc: 'สอนศุกร์(12.00น.+), เสาร์, อาทิตย์ | 600฿/ชม.' }
-        ];
 
         function getGeneratedHourlySlots() {
             const slots = [];
@@ -514,6 +640,8 @@
 
             document.getElementById('admin-close-date').value = adminCloseDate;
             document.getElementById('coach-schedule-date').value = coachScheduleDate;
+
+            loadPricingToInputs();
 
             if (document.getElementById('operating-open-time')) {
                 document.getElementById('operating-open-time').value = courtOperatingHours.startHour || 6;
@@ -550,17 +678,13 @@
                     const loaded = {}; snapshot.forEach(doc => loaded[doc.id] = doc.data().slots || {});
                     coachCustomAvailability = loaded; safeSetStorage('gallery_coach_availability', coachCustomAvailability); renderCoachView(); renderWeeklyDashboard();
                 });
-                db.collection("settings").doc("court_operating_hours").onSnapshot((doc) => {
+                db.collection("settings").doc("pricing").onSnapshot((doc) => {
                     if (doc.exists) {
-                        courtOperatingHours = doc.data();
-                        safeSetStorage('gallery_court_operating_hours', courtOperatingHours);
-                        if (document.getElementById('operating-open-time')) {
-                            document.getElementById('operating-open-time').value = courtOperatingHours.startHour;
-                        }
-                        if (document.getElementById('operating-close-time')) {
-                            document.getElementById('operating-close-time').value = courtOperatingHours.endHour;
-                        }
-                        renderAdminCourtClosure(); renderCoachView(); renderWeeklyDashboard();
+                        settings = doc.data();
+                        safeSetStorage('gallery_settings', settings);
+                        loadPricingToInputs();
+                        renderCoachTabButtons();
+                        renderCoachView();
                     }
                 });
             }
@@ -579,37 +703,101 @@
         function switchTab(tabName) {
             const vAdmin = document.getElementById('view-admin');
             const vCoach = document.getElementById('view-coach');
-            const vWeekly = document.getElementById('view-[#B39250]');
+            const vWeekly = document.getElementById('view-weekly');
             const btnAdmin = document.getElementById('btn-tab-admin');
             const btnCoach = document.getElementById('btn-tab-coach');
             const btnWeekly = document.getElementById('btn-tab-weekly');
 
-            if (!vAdmin || !vCoach || !document.getElementById('view-weekly') || !btnAdmin) return;
+            if (!vAdmin || !vCoach || !vWeekly || !btnAdmin) return;
 
-            btnAdmin.className = "px-3.5 sm:px-4 py-2 sm:py-2.5 font-semibold rounded-lg transition-all text-gray-400 hover:text-white";
-            if (document.getElementById('btn-tab-coach')) document.getElementById('btn-tab-coach').className = "px-3.5 sm:px-4 py-2 sm:py-2.5 font-semibold rounded-lg transition-all text-gray-400 hover:text-white";
-            if (document.getElementById('btn-tab-weekly')) document.getElementById('btn-tab-weekly').className = "px-3.5 sm:px-4 py-2 sm:py-2.5 font-semibold rounded-lg transition-all text-gray-400 hover:text-white";
+            btnAdmin.className = "px-3.5 sm:px-4 py-2 sm:py-2.5 font-bold rounded-lg transition-all text-gray-400 hover:text-white";
+            if (btnCoach) btnCoach.className = "px-3.5 sm:px-4 py-2 sm:py-2.5 font-bold rounded-lg transition-all text-gray-400 hover:text-white";
+            if (btnWeekly) btnWeekly.className = "px-3.5 sm:px-4 py-2 sm:py-2.5 font-bold rounded-lg transition-all text-gray-400 hover:text-white";
 
             vAdmin.classList.add('hidden');
             vCoach.classList.add('hidden');
-            document.getElementById('view-weekly').classList.add('hidden');
+            vWeekly.classList.add('hidden');
 
             if (tabName === 'admin') {
                 vAdmin.classList.remove('hidden');
-                btnAdmin.className = "px-3.5 sm:px-4 py-2 sm:py-2.5 font-semibold rounded-lg transition-all bg-[#B39250] text-[#1A1A1A]";
+                btnAdmin.className = "px-3.5 sm:px-4 py-2 sm:py-2.5 font-bold rounded-lg transition-all bg-[#B39250] text-[#1A1A1A]";
                 renderAdminDashboard();
             } else if (tabName === 'coach') {
                 vCoach.classList.remove('hidden');
-                if (document.getElementById('btn-tab-coach')) document.getElementById('btn-tab-coach').className = "px-3.5 sm:px-4 py-2 sm:py-2.5 font-semibold rounded-lg transition-all bg-[#B39250] text-[#1A1A1A]";
+                if (btnCoach) btnCoach.className = "px-3.5 sm:px-4 py-2 sm:py-2.5 font-bold rounded-lg transition-all bg-[#B39250] text-[#1A1A1A]";
+                renderCoachTabButtons();
                 renderCoachView();
             } else if (tabName === 'weekly') {
-                document.getElementById('view-weekly').classList.remove('hidden');
-                if (document.getElementById('btn-tab-weekly')) document.getElementById('btn-tab-weekly').className = "px-3.5 sm:px-4 py-2 sm:py-2.5 font-semibold rounded-lg transition-all bg-[#B39250] text-[#1A1A1A]";
+                vWeekly.classList.remove('hidden');
+                if (btnWeekly) btnWeekly.className = "px-3.5 sm:px-4 py-2 sm:py-2.5 font-bold rounded-lg transition-all bg-[#B39250] text-[#1A1A1A]";
                 renderWeeklyDashboard();
             }
         }
 
-        // --- 4. APPROVAL MODAL & STATUS MANAGEMENT ---
+        // --- 4. PRICING & COACH SETTINGS MANAGEMENT ---
+        function loadPricingToInputs() {
+            if (document.getElementById('cfg-rate-weekday')) document.getElementById('cfg-rate-weekday').value = settings.rateWeekday || 400;
+            if (document.getElementById('cfg-rate-weekend')) document.getElementById('cfg-rate-weekend').value = settings.rateWeekend || 500;
+            if (document.getElementById('cfg-rate-knocker')) document.getElementById('cfg-rate-knocker').value = settings.rateKnocker || 300;
+            if (document.getElementById('cfg-rate-[#B39250]')) document.getElementById('cfg-rate-[#B39250]').value = settings.rateBallMachine || 250;
+
+            const coachContainer = document.getElementById('coach-settings-list');
+            if (!coachContainer) return;
+            coachContainer.innerHTML = '';
+
+            settings.coaches.forEach((c, idx) => {
+                const div = document.createElement('div');
+                div.className = "p-3 bg-white rounded-xl border border-emerald-100 flex items-center justify-between gap-2 shadow-xs";
+                div.innerHTML = `
+                    <div>
+                        <span class="font-bold text-gray-900 block">${c.name}</span>
+                        <span class="text-xs text-gray-500 font-light">${c.title}</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <div class="flex items-center gap-1">
+                            <span class="text-xs font-bold text-gray-700">ค่าสอน:</span>
+                            <input type="number" value="${c.price}" id="cfg-coach-price-${c.id}" class="w-20 p-1.5 border border-gray-300 rounded-lg text-xs font-bold text-emerald-800 outline-none">
+                        </div>
+                        <button onclick="toggleCoachActiveStatus('${c.id}')" class="px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${c.active ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' : 'bg-rose-100 text-rose-800 border border-rose-300'}">
+                            ${c.active ? '🟢 เปิดใช้งาน' : '🔴 ปิดใช้งาน'}
+                        </button>
+                    </div>`;
+                coachContainer.appendChild(div);
+            });
+        }
+
+        function toggleCoachActiveStatus(coachId) {
+            const coach = settings.coaches.find(c => c.id === coachId);
+            if (coach) {
+                coach.active = !coach.active;
+                savePricingSettings();
+            }
+        }
+
+        function savePricingSettings() {
+            settings.rateWeekday = parseInt(document.getElementById('cfg-rate-weekday').value) || 400;
+            settings.rateWeekend = parseInt(document.getElementById('cfg-rate-weekend').value) || 500;
+            settings.rateKnocker = parseInt(document.getElementById('cfg-rate-knocker').value) || 300;
+            settings.rateBallMachine = parseInt(document.getElementById('cfg-rate-[#B39250]').value) || 250;
+
+            settings.coaches.forEach(c => {
+                const priceInput = document.getElementById(`cfg-coach-price-${c.id}`);
+                if (priceInput) c.price = parseInt(priceInput.value) || c.price;
+            });
+
+            safeSetStorage('gallery_settings', settings);
+
+            if (useFirebase && db) {
+                db.collection("settings").doc("pricing").set(settings);
+            }
+
+            loadPricingToInputs();
+            renderCoachTabButtons();
+            renderCoachView();
+            showToast('บันทึกการตั้งค่าราคาและสถานะโค้ชเรียบร้อยแล้ว!');
+        }
+
+        // --- 5. APPROVAL MODAL & STATUS MANAGEMENT ---
         function approveBooking(id) {
             const index = bookings.findIndex(b => b.bookingId === id);
             if (index !== -1) {
@@ -682,7 +870,7 @@
 
             pendingList.innerHTML = '';
             if (pendingBookings.length === 0) {
-                pendingList.innerHTML = `<p class="text-xs sm:text-sm text-gray-500 text-center py-3 font-medium">✨ ไม่มีคิวรออนุมัติชำระเงินในขณะนี้</p>`;
+                pendingList.innerHTML = `<p class="text-xs sm:text-sm text-gray-500 text-center py-3 font-light">✨ ไม่มีคิวรออนุมัติชำระเงินในขณะนี้</p>`;
                 return;
             }
 
@@ -701,9 +889,9 @@
                             <div class="flex items-center gap-2">
                                 <span class="font-mono font-bold text-amber-900 text-xs bg-amber-100 px-2 py-0.5 rounded">${pb.bookingId}</span>
                                 <span class="font-bold text-gray-900 text-sm">${pb.bookedBy}</span>
-                                <span class="text-xs text-gray-600">(${pb.customerPhone})</span>
+                                <span class="text-xs text-gray-600 font-light">(${pb.customerPhone})</span>
                             </div>
-                            <p class="text-xs text-gray-600 mt-0.5">${getBookingTypeDesc(pb.bookingType)} ${pb.coachName ? `(${pb.coachName})` : ''} | 🕒 ${formatDateThai(pb.date)} (${pb.timeSlot} น.)</p>
+                            <p class="text-xs text-gray-600 font-light mt-0.5">${getBookingTypeDesc(pb.bookingType)} ${pb.coachName ? `(${pb.coachName})` : ''} | 🕒 ${formatDateThai(pb.date)} (${pb.timeSlot} น.)</p>
                             <p class="text-xs font-bold text-emerald-800">ยอดที่ต้องตรวจสอบ: ${pb.totalPrice || 0} ฿</p>
                         </div>
                     </div>
@@ -732,6 +920,7 @@
             adminClosedSlots = safeGetStorage('gallery_admin_closed_slots', {});
             coachCustomAvailability = safeGetStorage('gallery_coach_availability', {});
             courtOperatingHours = safeGetStorage('gallery_court_operating_hours', { startHour: 6, endHour: 22 });
+            settings = safeGetStorage('gallery_settings', settings);
             renderAdminDashboard();
             renderCoachView();
             renderWeeklyDashboard();
@@ -855,6 +1044,21 @@
             renderAdminCourtClosure();
 
             const confirmedBookings = bookings.filter(b => b.status === 'confirmed');
+            const todayStr = getTodayStr();
+
+            // กรองเฉพาะคิวที่ยืนยันแล้ว และเป็นวันปัจจุบันขึ้นไป (ซ่อนวันที่ผ่านไปแล้ว)
+            const upcomingBookings = confirmedBookings.filter(b => b.date >= todayStr);
+
+            // เรียงลำดับตามวันที่และเวลาที่จองสนาม (จากใกล้สุดไปไกลสุด)
+            upcomingBookings.sort((a, b) => {
+                if (a.date !== b.date) {
+                    return (a.date || '').localeCompare(b.date || '');
+                }
+                const startA = a.timeSlot ? a.timeSlot.split(' - ')[0] : '';
+                const startB = b.timeSlot ? b.timeSlot.split(' - ')[0] : '';
+                return startA.localeCompare(startB);
+            });
+
             const metricsContainer = document.getElementById('admin-metrics-container');
 
             if (metricsContainer) {
@@ -862,11 +1066,11 @@
                     const totalHours = confirmedBookings.reduce((sum, b) => sum + (b.bookingDuration || 1), 0);
                     metricsContainer.innerHTML = `
                         <div class="bg-white p-4 rounded-2xl border border-gray-200 text-center shadow-sm">
-                            <span class="text-xs sm:text-sm text-gray-500 font-medium block mb-1">คิวจองที่ยืนยันแล้ว</span>
+                            <span class="text-xs sm:text-sm text-gray-500 font-light block mb-1">คิวจองที่ยืนยันแล้ว</span>
                             <span class="text-xl sm:text-2xl font-bold text-gray-900">${confirmedBookings.length} คิว</span>
                         </div>
                         <div class="bg-emerald-50/70 p-4 rounded-2xl border border-emerald-100 text-center shadow-sm col-span-3">
-                            <span class="text-xs sm:text-sm text-emerald-700 font-medium block mb-1">ชั่วโมงการสอนรวมทั้งหมด</span>
+                            <span class="text-xs sm:text-sm text-emerald-700 font-light block mb-1">ชั่วโมงการสอนรวมทั้งหมด</span>
                             <span class="text-xl sm:text-2xl font-bold text-emerald-900">${totalHours} ชั่วโมง</span>
                         </div>`;
                 } else {
@@ -874,19 +1078,19 @@
                     const coachTotal = confirmedBookings.reduce((sum, b) => sum + (b.coachPrice || 0), 0);
                     metricsContainer.innerHTML = `
                         <div class="bg-white p-4 rounded-2xl border border-gray-200 text-center shadow-sm">
-                            <span class="text-xs sm:text-sm text-gray-500 font-medium block mb-1">คิวจองที่ยืนยันแล้ว</span>
+                            <span class="text-xs sm:text-sm text-gray-500 font-light block mb-1">คิวจองที่ยืนยันแล้ว</span>
                             <span class="text-xl sm:text-2xl font-bold text-gray-900">${confirmedBookings.length} คิว</span>
                         </div>
                         <div class="bg-blue-50/70 p-4 rounded-2xl border border-blue-100 text-center shadow-sm">
-                            <span class="text-xs sm:text-sm text-blue-700 font-medium block mb-1">รายได้ค่าสนาม</span>
+                            <span class="text-xs sm:text-sm text-blue-700 font-light block mb-1">รายได้ค่าสนาม</span>
                             <span class="text-xl sm:text-2xl font-bold text-blue-900">${courtTotal} ฿</span>
                         </div>
                         <div class="bg-emerald-50/70 p-4 rounded-2xl border border-emerald-100 text-center shadow-sm">
-                            <span class="text-xs sm:text-sm text-emerald-700 font-medium block mb-1">รายได้ค่าสอน</span>
+                            <span class="text-xs sm:text-sm text-emerald-700 font-light block mb-1">รายได้ค่าสอน</span>
                             <span class="text-xl sm:text-2xl font-bold text-emerald-900">${coachTotal} ฿</span>
                         </div>
                         <div class="bg-amber-50/70 p-4 rounded-2xl border border-amber-200 text-center shadow-sm">
-                            <span class="text-xs sm:text-sm text-amber-800 font-medium block mb-1">รายได้รวมสุทธิ</span>
+                            <span class="text-xs sm:text-sm text-amber-800 font-light block mb-1">รายได้รวมสุทธิ</span>
                             <span class="text-xl sm:text-2xl font-bold text-amber-950">${courtTotal + coachTotal} ฿</span>
                         </div>`;
                 }
@@ -895,12 +1099,12 @@
             const list = document.getElementById('admin-booking-list');
             if (!list) return;
             list.innerHTML = '';
-            if (confirmedBookings.length === 0) {
-                list.innerHTML = `<p class="text-xs sm:text-sm text-gray-400 text-center py-6 font-medium">ยังไม่มีคิวการจองที่ยืนยันแล้วในระบบ</p>`; 
+            if (upcomingBookings.length === 0) {
+                list.innerHTML = `<p class="text-xs sm:text-sm text-gray-400 text-center py-6 font-light">ไม่มีรายการคิวจองล่วงหน้าในขณะนี้ (คิวในอดีตถูกซ่อนไว้ สามารถกดปุ่ม Export เพื่อดูประวัติทั้งหมดได้)</p>`; 
                 return;
             }
 
-            confirmedBookings.forEach(b => {
+            upcomingBookings.forEach(b => {
                 const div = document.createElement('div');
                 div.className = "p-3.5 sm:p-4 bg-gray-50 rounded-2xl border border-gray-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2";
                 
@@ -911,10 +1115,10 @@
                         <div class="flex flex-wrap items-center gap-2">
                             <span class="font-mono font-bold text-amber-900 text-xs sm:text-sm bg-amber-100 px-2 py-0.5 rounded">${b.bookingId || '-'}</span>
                             <span class="font-bold text-gray-900 text-sm sm:text-base">${b.bookedBy || '-'}</span>
-                            <span class="text-xs text-gray-600">(${b.customerPhone || '-'})</span>
+                            <span class="text-xs text-gray-600 font-light">(${b.customerPhone || '-'})</span>
                         </div>
-                        <p class="text-xs sm:text-sm text-gray-600 mt-1">${b.courtName || 'Indoor Tennis Court'} | <span class="font-semibold text-emerald-700">${getBookingTypeDesc(b.bookingType)} ${b.coachName ? `(${b.coachName})` : ''}</span></p>
-                        <p class="text-xs text-gray-500 mt-0.5">🗓️ ${formatDateThai(b.date)} | 🕒 ${b.timeSlot} น. (${b.bookingDuration || 1} ชม.)</p>
+                        <p class="text-xs sm:text-sm text-gray-600 font-light mt-1">${b.courtName || 'Indoor Tennis Court'} | <span class="font-bold text-emerald-700">${getBookingTypeDesc(b.bookingType)} ${b.coachName ? `(${b.coachName})` : ''}</span></p>
+                        <p class="text-xs text-gray-500 font-light mt-0.5">🗓️ ${formatDateThai(b.date)} | 🕒 ${b.timeSlot} น. (${b.bookingDuration || 1} ชม.)</p>
                     </div>
                     <div class="flex items-center gap-3 self-end sm:self-center">
                         ${priceDisplay}
@@ -933,12 +1137,39 @@
         }
 
         // --- 6. COACH VIEW FUNCTIONS ---
+        function renderCoachTabButtons() {
+            const container = document.getElementById('coach-tab-buttons-container');
+            if (!container) return;
+            container.innerHTML = '';
+
+            const activeCoaches = settings.coaches.filter(c => c.active !== false);
+            if (activeCoaches.length === 0) {
+                container.innerHTML = `<span class="text-xs text-rose-600 font-bold">ไม่มีโค้ชที่เปิดใช้งานในระบบ</span>`;
+                return;
+            }
+
+            if (!activeCoaches.some(c => c.id === activeCoachViewTab)) {
+                activeCoachViewTab = activeCoaches[0].id;
+            }
+
+            activeCoaches.forEach(c => {
+                const btn = document.createElement('button');
+                btn.onclick = () => switchCoachTab(c.id);
+                btn.id = `c-tab-${c.id}`;
+                btn.className = (c.id === activeCoachViewTab) 
+                    ? 'px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all bg-[#1A1A1A] text-white' 
+                    : 'px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all bg-gray-100 text-gray-600';
+                btn.innerText = `👨‍🏫 ${c.name}`;
+                container.appendChild(btn);
+            });
+        }
+
         function switchCoachTab(coachId) {
             activeCoachViewTab = coachId;
-            ['coach_gun', 'coach_nok', 'coach_to'].forEach(c => {
-                const tab = document.getElementById(`c-tab-${c}`);
+            settings.coaches.forEach(c => {
+                const tab = document.getElementById(`c-tab-${c.id}`);
                 if (tab) {
-                    tab.className = (c === coachId) 
+                    tab.className = (c.id === coachId) 
                         ? 'px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all bg-[#1A1A1A] text-white' 
                         : 'px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all bg-gray-100 text-gray-600';
                 }
@@ -956,8 +1187,8 @@
             if (coachCustomAvailability[key] && coachCustomAvailability[key][slotStr] !== undefined) {
                 return coachCustomAvailability[key][slotStr];
             }
-            const coachObj = COACHES.find(c => c.id === coachId);
-            if (!coachObj) return false;
+            const coachObj = settings.coaches.find(c => c.id === coachId);
+            if (!coachObj || coachObj.active === false) return false;
             const parts = dateStr.split('-');
             const dayOfWeek = new Date(parseInt(parts[0]), parseInt(parts[1])-1, parseInt(parts[2])).getDay();
             if (!coachObj.availableDays.includes(dayOfWeek)) return false;
@@ -966,7 +1197,7 @@
         }
 
         function renderCoachView() {
-            const coachObj = COACHES.find(c => c.id === activeCoachViewTab);
+            const coachObj = settings.coaches.find(c => c.id === activeCoachViewTab);
             if (!coachObj) return;
 
             const badge = document.getElementById('coach-info-badge');
@@ -975,7 +1206,7 @@
                 badge.innerHTML = `
                     <div>
                         <span class="font-bold text-amber-950 block text-sm sm:text-base">${coachObj.name} (${coachObj.title})</span>
-                        <span class="text-xs sm:text-sm text-amber-800">${coachObj.desc}</span>
+                        <span class="text-xs sm:text-sm text-amber-800 font-light">${coachObj.desc}</span>
                     </div>
                     ${priceInfo}`;
             }
@@ -1018,7 +1249,7 @@
             schedule.innerHTML = '';
 
             if (coachBookings.length === 0) {
-                schedule.innerHTML = `<p class="text-xs sm:text-sm text-gray-400 text-center py-6 font-medium">ยังไม่มีรายการจองคิวสอนของโค้ชท่านนี้</p>`;
+                schedule.innerHTML = `<p class="text-xs sm:text-sm text-gray-400 text-center py-6 font-light">ยังไม่มีรายการจองคิวสอนของโค้ชท่านนี้</p>`;
             } else {
                 coachBookings.forEach(cb => {
                     const div = document.createElement('div');
@@ -1026,8 +1257,8 @@
                     div.innerHTML = `
                         <div>
                             <p class="font-bold text-gray-900 text-sm sm:text-base">🗓️ ${formatDateThai(cb.date)} (${cb.timeSlot} น.) - ${cb.bookingDuration || 1} ชั่วโมง</p>
-                            <p class="text-gray-600 text-xs sm:text-sm mt-0.5">นักเรียน: <span class="font-bold text-gray-800">${cb.bookedBy}</span> (${cb.customerPhone}) | ระดับ: ${cb.customerSkill}</p>
-                            ${cb.customerNote ? `<p class="text-amber-900 text-xs font-medium mt-0.5">หมายเหตุ: ${cb.customerNote}</p>` : ''}
+                            <p class="text-gray-600 font-light text-xs sm:text-sm mt-0.5">นักเรียน: <span class="font-bold text-gray-800">${cb.bookedBy}</span> (${cb.customerPhone}) | ระดับ: ${cb.customerSkill}</p>
+                            ${cb.customerNote ? `<p class="text-amber-900 text-xs font-light mt-0.5">หมายเหตุ: ${cb.customerNote}</p>` : ''}
                         </div>
                         <span class="bg-emerald-100 text-emerald-800 px-3 py-1 rounded-full text-xs font-bold shrink-0">● ยืนยันคิวแล้ว</span>`;
                     schedule.appendChild(div);
@@ -1079,11 +1310,11 @@
                     const totalCoachHours = confirmedWeekly.reduce((sum, b) => sum + (b.bookingDuration || 1), 0);
                     metricsContainer.innerHTML = `
                         <div class="bg-white p-4 rounded-2xl border border-gray-200 text-center shadow-sm">
-                            <span class="text-xs sm:text-sm text-gray-500 font-medium block mb-1">คิวจองสัปดาห์นี้</span>
+                            <span class="text-xs sm:text-sm text-gray-500 font-light block mb-1">คิวจองสัปดาห์นี้</span>
                             <span class="text-xl sm:text-2xl font-bold text-gray-900">${confirmedWeekly.length} คิว</span>
                         </div>
                         <div class="bg-emerald-50/70 p-4 rounded-2xl border border-emerald-100 text-center shadow-sm col-span-3">
-                            <span class="text-xs sm:text-sm text-emerald-700 font-medium block mb-1">ชั่วโมงการสอนรวมสัปดาห์นี้</span>
+                            <span class="text-xs sm:text-sm text-emerald-700 font-light block mb-1">ชั่วโมงการสอนรวมสัปดาห์นี้</span>
                             <span class="text-xl sm:text-2xl font-bold text-emerald-900">${totalCoachHours} ชั่วโมง</span>
                         </div>`;
                 } else {
@@ -1091,19 +1322,19 @@
                     const coachTotal = confirmedWeekly.reduce((sum, b) => sum + (b.coachPrice || 0), 0);
                     metricsContainer.innerHTML = `
                         <div class="bg-white p-4 rounded-2xl border border-gray-200 text-center shadow-sm">
-                            <span class="text-xs sm:text-sm text-gray-500 font-medium block mb-1">คิวจองรวมสัปดาห์นี้</span>
+                            <span class="text-xs sm:text-sm text-gray-500 font-light block mb-1">คิวจองรวมสัปดาห์นี้</span>
                             <span class="text-xl sm:text-2xl font-bold text-gray-900">${confirmedWeekly.length} คิว</span>
                         </div>
                         <div class="bg-blue-50/70 p-4 rounded-2xl border border-blue-100 text-center shadow-sm">
-                            <span class="text-xs sm:text-sm text-blue-700 font-medium block mb-1">รายได้ค่าสนามสัปดาห์นี้</span>
+                            <span class="text-xs sm:text-sm text-blue-700 font-light block mb-1">รายได้ค่าสนามสัปดาห์นี้</span>
                             <span class="text-xl sm:text-2xl font-bold text-blue-900">${courtTotal} ฿</span>
                         </div>
                         <div class="bg-emerald-50/70 p-4 rounded-2xl border border-emerald-100 text-center shadow-sm">
-                            <span class="text-xs sm:text-sm text-emerald-700 font-medium block mb-1">รายได้ค่าสอนสัปดาห์นี้</span>
+                            <span class="text-xs sm:text-sm text-emerald-700 font-light block mb-1">รายได้ค่าสอนสัปดาห์นี้</span>
                             <span class="text-xl sm:text-2xl font-bold text-emerald-900">${coachTotal} ฿</span>
                         </div>
                         <div class="bg-amber-50/70 p-4 rounded-2xl border border-amber-200 text-center shadow-sm">
-                            <span class="text-xs sm:text-sm text-amber-800 font-medium block mb-1">รายได้รวมสุทธิสัปดาห์นี้</span>
+                            <span class="text-xs sm:text-sm text-amber-800 font-light block mb-1">รายได้รวมสุทธิสัปดาห์นี้</span>
                             <span class="text-xl sm:text-2xl font-bold text-amber-950">${courtTotal + coachTotal} ฿</span>
                         </div>`;
                 }
@@ -1243,7 +1474,7 @@
                                         </div>
                                         <p class="font-bold text-gray-900 text-xs sm:text-sm truncate" title="${matchedBooking.bookedBy}">${matchedBooking.bookedBy}</p>
                                         <p class="text-[10px] sm:text-xs text-gray-600 font-mono">${matchedBooking.customerPhone || ''}</p>
-                                        <p class="text-[10px] text-gray-500 font-medium mt-1">🕒 ${matchedBooking.timeSlot} น. (${matchedBooking.bookingDuration || spanCount} ชม.)</p>
+                                        <p class="text-[10px] text-gray-500 font-light mt-1">🕒 ${matchedBooking.timeSlot} น. (${matchedBooking.bookingDuration || spanCount} ชม.)</p>
                                     </div>
                                     ${priceHtml}
                                 </div>`;

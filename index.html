@@ -295,32 +295,24 @@
 
         <!-- STEP 4: PAYMENT SCREEN WITH AUTOMATIC IMAGE COMPRESSION -->
         <div id="step-4-content" class="hidden space-y-4">
-            <div class="text-center py-1">
-                <span class="text-[#B39250] font-serif-custom font-bold text-base tracking-widest block">THE GALLERY</span>
-                <h2 class="font-bold text-gray-900 text-base sm:text-lg">ชำระเงินออนไลน์</h2>
-            </div>
 
-            <div class="bg-white rounded-3xl p-5 border border-gray-200 text-center max-w-[300px] mx-auto shadow-sm space-y-3">
-                <div class="bg-blue-900 text-white py-1.5 px-3 rounded-t-xl font-bold text-xs flex justify-between items-center">
-                    <span>พร้อมเพย์</span>
-                    <span class="text-xs italic">PromptPay</span>
-                </div>
-
-                <div class="p-2 border border-gray-200 bg-white rounded-2xl inline-block">
-                    <img src="qr.jpg" id="qr-image" alt="PromptPay QR Code" class="w-44 h-44 object-contain mx-auto rounded-xl"
-                         onerror="this.src='https://placehold.co/220x220/1A1A1A/B39250?text=PROMPTPAY+QR';">
+            <!-- LARGE ENLARGED QR CODE CONTAINER (REMOVED OUTER CARD, HEADER TEXT, AND BLUE BANNER) -->
+            <div class="text-center space-y-3 pt-1">
+                <div class="p-2 border border-gray-200 bg-white rounded-3xl shadow-sm inline-block w-full max-w-[340px] mx-auto">
+                    <img src="qr.jpg" id="qr-image" alt="PromptPay QR Code" class="w-full h-auto object-contain mx-auto rounded-2xl"
+                         onerror="this.src='https://placehold.co/320x380/1A1A1A/B39250?text=PROMPTPAY+QR';">
                 </div>
 
                 <div>
-                    <span class="text-gray-500 text-xs block font-medium">ยอดชำระสุทธิ:</span>
-                    <span id="payment-amount" class="font-bold text-xl text-gray-900">400.00 ฿</span>
+                    <span class="text-gray-500 text-xs block font-light">ยอดชำระสุทธิ:</span>
+                    <span id="payment-amount" class="font-bold text-2xl sm:text-3xl text-gray-900">400.00 ฿</span>
                 </div>
 
                 <!-- SLIP ATTACHMENT SECTION -->
-                <div class="bg-amber-50/80 p-3 rounded-2xl border border-amber-200 text-left space-y-2">
+                <div class="bg-amber-50/80 p-3.5 rounded-2xl border border-amber-200 text-left space-y-2 max-w-[340px] mx-auto">
                     <label class="block text-xs font-bold text-amber-950">📸 แนบหลักฐานการโอนเงิน (สลิป) *</label>
                     <input type="file" id="slip-file-input" accept="image/*" onchange="handleSlipSelected(event)"
-                        class="w-full text-xs text-gray-700 file:mr-2 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-[#1A1A1A] file:text-white hover:file:bg-[#333] cursor-pointer">
+                        class="w-full text-xs text-gray-700 file:mr-2 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-[#1A1A1A] file:text-white hover:file:bg-[#333] cursor-pointer font-light">
                     <div id="slip-preview-container" class="hidden mt-2 text-center">
                         <p class="text-[11px] text-emerald-700 font-bold mb-1">✓ เลือกสลิปเรียบร้อยแล้ว (บีบอัดภาพเพื่อส่งสปีดด่วน):</p>
                         <img id="slip-preview-img" class="h-32 mx-auto rounded-xl border-2 border-emerald-400 object-contain shadow-xs bg-white" src="" alt="Slip Preview">
@@ -328,11 +320,11 @@
                 </div>
             </div>
 
-            <div class="bg-amber-50 p-3 rounded-2xl border border-amber-200 text-center text-xs sm:text-sm text-amber-900 font-mono font-bold">
+            <div class="bg-amber-50 p-3 rounded-2xl border border-amber-200 text-center text-xs sm:text-sm text-amber-900 font-mono font-bold max-w-[340px] mx-auto">
                 ⏱️ กรุณาชำระภายใน: <span id="payment-timer" class="text-base text-amber-800">09:59</span> นาที
             </div>
 
-            <button onclick="submitPendingPayment()" class="w-full py-3.5 bg-[#B39250] hover:bg-[#8E6D31] text-white rounded-2xl font-bold text-base transition-all shadow-md">
+            <button onclick="submitPendingPayment()" class="w-full py-4 bg-[#B39250] hover:bg-[#8E6D31] text-white rounded-2xl font-bold text-base transition-all shadow-md">
                 ✓ แจ้งชำระเงินเรียบร้อย (ส่งแนบสลิป)
             </button>
         </div>
@@ -553,6 +545,19 @@
         let selectedTime = null;
         let lineProfile = { userId: '', displayName: '' };
 
+        // โหลดค่าตั้งค่าการเปิด/ปิดโค้ช และราคาบริการจาก Admin
+        let settings = safeGetStorage('gallery_settings', {
+            rateWeekday: 400,
+            rateWeekend: 500,
+            rateKnocker: 300,
+            rateBallMachine: 250,
+            coaches: [
+                { id: 'coach_gun', name: 'Coach Gun', title: 'PREMIUM COACH', price: 1700, active: true },
+                { id: 'coach_nok', name: 'Coach Nok', title: 'PROFESSIONAL COACH', price: 800, active: true },
+                { id: 'coach_to', name: 'Coach To', price: 600, active: true }
+            ]
+        });
+
         let timerInterval = null;
         let paymentCountdown = 600;
         let currentActiveBookingId = null;
@@ -566,12 +571,31 @@
         let adminClosedSlots = safeGetStorage('gallery_admin_closed_slots', {});
         let coachCustomAvailability = safeGetStorage('gallery_coach_availability', {});
 
+        // ฟังก์ชันดึงเฉพาะโค้ชที่ถูกเปิดใช้งาน (Active)
+        function getActiveCoaches() {
+            return COACHES.map(c => {
+                const sCoach = (settings.coaches || []).find(sc => sc.id === c.id);
+                return {
+                    ...c,
+                    price: sCoach ? sCoach.price : c.price,
+                    active: sCoach ? (sCoach.active !== false) : true
+                };
+            }).filter(c => c.active);
+        }
+
         // --- 3. CORE ACTION FUNCTIONS ---
         window.onload = function() {
             document.getElementById('booking-date').value = selectedDate;
             renderCoaches();
             renderTimeSlots();
             initLineLIFF();
+
+            // ฟัง Event เมื่อแอดมินสลับเปิด/ปิดโค้ชข้ามแท็บ
+            window.addEventListener('storage', function(e) {
+                settings = safeGetStorage('gallery_settings', settings);
+                renderCoaches();
+                renderTimeSlots();
+            });
 
             if (useFirebase && db) {
                 db.collection("bookings").onSnapshot((snapshot) => {
@@ -596,23 +620,16 @@
                         renderTimeSlots();
                     }
                 });
+                db.collection("settings").doc("pricing").onSnapshot((doc) => {
+                    if (doc.exists) {
+                        settings = doc.data();
+                        safeSetStorage('gallery_settings', settings);
+                        renderCoaches();
+                        renderTimeSlots();
+                    }
+                });
             }
         };
-
-        function initLineLIFF() {
-            if (typeof liff !== 'undefined') {
-                liff.init({ liffId: "2001234567-AbCdEfGh" }).then(() => {
-                    if (liff.isLoggedIn()) {
-                        liff.getProfile().then(profile => {
-                            lineProfile = profile;
-                            if (document.getElementById('cust-name')) document.getElementById('cust-name').value = profile.displayName;
-                            if (document.getElementById('line-user-name')) document.getElementById('line-user-name').innerText = profile.displayName;
-                            if (document.getElementById('line-user-badge')) document.getElementById('line-user-badge').classList.remove('hidden');
-                        });
-                    }
-                }).catch(err => console.log("LIFF Init Fallback"));
-            }
-        }
 
         function setBookingType(type) {
             bookingType = type;
@@ -631,7 +648,10 @@
             });
 
             if (type === 'court_and_coach') {
-                if (!selectedCoach) selectedCoach = COACHES[0];
+                const activeCoaches = getActiveCoaches();
+                if (!selectedCoach || !activeCoaches.some(c => c.id === selectedCoach.id)) {
+                    selectedCoach = activeCoaches[0] || null;
+                }
                 if (coachSection) coachSection.classList.remove('hidden');
             } else {
                 selectedCoach = null;
@@ -641,26 +661,23 @@
             renderTimeSlots();
         }
 
-        function setBookingDuration(hours) {
-            bookingDuration = hours;
-            for (let i = 1; i <= 4; i++) {
-                const btn = document.getElementById(`btn-dur-${i}`);
-                if (btn) {
-                    if (i === hours) {
-                        btn.className = "py-3 rounded-2xl font-bold text-sm sm:text-base border border-[#B39250] bg-[#1A1A1A] text-white shadow-sm";
-                    } else {
-                        btn.className = "py-3 rounded-2xl font-bold text-sm sm:text-base border border-gray-200 bg-white text-gray-800 hover:border-[#B39250]";
-                    }
-                }
-            }
-            renderTimeSlots();
-        }
-
         function renderCoaches() {
             const container = document.getElementById('coach-list-container');
             if (!container) return;
             container.innerHTML = '';
-            COACHES.forEach(coach => {
+
+            const activeCoaches = getActiveCoaches();
+
+            if (activeCoaches.length === 0) {
+                container.innerHTML = `<div class="p-4 bg-rose-50 text-rose-800 rounded-2xl text-center text-xs font-bold border border-rose-200">ขณะนี้ไม่มีโค้ชเปิดให้บริการ</div>`;
+                return;
+            }
+
+            if (selectedCoach && !activeCoaches.some(c => c.id === selectedCoach.id)) {
+                selectedCoach = activeCoaches[0];
+            }
+
+            activeCoaches.forEach(coach => {
                 const isSelected = selectedCoach && selectedCoach.id === coach.id;
                 const div = document.createElement('div');
                 div.className = `p-4 rounded-3xl border transition-all cursor-pointer ${isSelected ? 'border-[#B39250] bg-white ring-2 ring-[#B39250] shadow-md' : 'border-gray-200 bg-white hover:border-gray-300'}`;
@@ -777,10 +794,10 @@
                 const totalPrice = hourlyPrice * bookingDuration;
 
                 if (!status.available) {
-                    option.text = `${slotStr} (${bookingDuration} ชม.) - [🔴 ${status.reason}]`;
+                    option.text = `🔴 [${status.reason}] - ${slotStr} (${bookingDuration} ชม.)`;
                     option.disabled = true;
                 } else {
-                    option.text = `${slotStr} (${bookingDuration} ชม.) - (🟢 ว่าง) รวม ${totalPrice} บาท`;
+                    option.text = `🟢 ว่าง - ${slotStr} (${bookingDuration} ชม.) - รวม ${totalPrice} บาท`;
                 }
                 if (slotStr === selectedTime) option.selected = true;
                 select.appendChild(option);
