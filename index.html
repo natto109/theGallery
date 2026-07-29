@@ -509,7 +509,7 @@
                 title: 'PREMIUM COACH', 
                 price: 1700, 
                 availableDays: [0,1,2,3,4,5,6], 
-                avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
+                avatar: 'coach1.png',
                 daysText: 'สอนทุกวัน จันทร์ - อาทิตย์', 
                 desc: 'สอนทุกระดับ ตั้งแต่พื้นฐานถึงระดับสูง เน้นเทคนิค วางแผนการเล่น และพัฒนาจิตใจนักกีฬา',
                 studentText: 'รับนักเรียน : เดี่ยว / กลุ่ม (1-4 คน)'
@@ -520,7 +520,7 @@
                 title: 'PROFESSIONAL COACH', 
                 price: 800, 
                 availableDays: [2,3,4], 
-                avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=200&q=80',
+                avatar: 'coach2.png',
                 daysText: 'สอนวัน อังคาร - พุธ - พฤหัสบดี', 
                 desc: 'สอนทุกระดับ ตั้งแต่พื้นฐานถึงระดับสูง เน้นความเข้าใจเทคนิค และการฝึกที่ถูกต้อง',
                 studentText: 'รับนักเรียน : เดี่ยว / กลุ่ม (1-4 คน)'
@@ -531,7 +531,7 @@
                 title: 'ASSISTANT COACH', 
                 price: 600, 
                 availableDays: [5,6,0], 
-                avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=80',
+                avatar: 'coach3.png',
                 daysText: 'สอนวัน ศุกร์ - เสาร์ - อาทิตย์', 
                 desc: 'สอนทุกระดับ ตั้งแต่พื้นฐานถึงระดับสูง เน้นความเข้าใจเกม การเคลื่อนไหว และการฝึกซ้อมที่นำไปใช้ได้จริง',
                 studentText: 'รับนักเรียน : เดี่ยว / กลุ่ม (1-5 คน)'
@@ -684,7 +684,7 @@
                 div.onclick = () => { selectedCoach = coach; renderCoaches(); renderTimeSlots(); };
                 div.innerHTML = `
                     <div class="flex gap-3 items-center">
-                        <img src="${coach.avatar}" class="w-16 h-16 rounded-full object-cover border-2 border-gray-200 shrink-0" alt="${coach.name}">
+                        <img src="${coach.avatar}" onerror="this.onerror=null; this.src='https://placehold.co/200x200/1A1A1A/B39250?text=${encodeURIComponent(coach.name)}';" class="w-16 h-16 rounded-full object-cover border-2 border-gray-200 shrink-0" alt="${coach.name}">
                         <div class="flex-1 min-w-0">
                             <div class="flex justify-between items-start gap-1">
                                 <div>
