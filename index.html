@@ -41,40 +41,19 @@
         }
     </style>
 </head>
-<body class="min-h-screen flex flex-col justify-between max-w-md mx-auto bg-[#FAF8F5] shadow-2xl border-x border-gray-200">
+<body class="min-h-screen flex flex-col justify-between max-w-md mx-auto bg-[#FAF8F5] shadow-2xl border-x border-gray-200 font-light">
 
     <!-- HEADER / BRANDING BANNER -->
-    <header class="bg-[#0D0D0D] text-white pt-5 pb-4 px-5 sticky top-0 z-30 shadow-md border-b border-[#B39250]/20">
-        <div class="flex justify-between items-start gap-2">
-            <div>
-                <h1 class="font-serif-custom font-bold text-lg leading-tight tracking-wider flex items-center gap-1 text-white">
-                    THE<br>GALLERY<br>TENNIS<br>HOUSE <span class="text-sm font-normal text-[#D4AF37] align-top">✦</span>
-                </h1>
-            </div>
-            <div class="text-right space-y-1">
-                <p class="text-[#D4AF37] font-serif-custom italic text-xs tracking-wide">Private Tennis Lifestyle Experience</p>
-                <p class="text-[10px] text-gray-400 font-mono tracking-widest uppercase">TENNIS • ART • SLOW LIVING</p>
-                <div id="line-user-badge" class="hidden inline-flex items-center gap-1.5 bg-[#262626] px-2.5 py-1 rounded-full border border-emerald-500/40 text-[11px] mt-1">
-                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                    <span id="line-user-name" class="font-medium text-gray-200 truncate max-w-[80px]">LINE User</span>
-                </div>
-            </div>
-        </div>
-
-        <!-- COURT RATE BOARD -->
-        <div class="mt-3.5 border border-[#B39250]/40 rounded-xl p-3 bg-[#141414] grid grid-cols-12 gap-2 text-center text-xs">
-            <div class="col-span-4 flex items-center justify-center border-r border-gray-800 pr-1">
-                <span class="text-[#B39250] font-mono text-[11px] leading-tight font-semibold">COURT RATE</span>
-            </div>
-            <div class="col-span-4 border-r border-gray-800 px-1">
-                <span class="text-[10px] text-gray-400 block uppercase font-mono">WEEKDAY</span>
-                <span class="text-[9px] text-gray-500 block font-mono mb-0.5">( MON - FRI )</span>
-                <span class="font-bold text-white text-sm">400 <span class="text-[10px] font-normal text-gray-400">฿ / HR</span></span>
-            </div>
-            <div class="col-span-4 pl-1">
-                <span class="text-[10px] text-gray-400 block uppercase font-mono">WEEKEND & HOLIDAY</span>
-                <span class="text-[9px] text-gray-500 block font-mono mb-0.5">( SAT - SUN & HOLIDAY )</span>
-                <span class="font-bold text-[#D4AF37] text-sm">500 <span class="text-[10px] font-normal text-gray-400">฿ / HR</span></span>
+    <header class="bg-[#0D0D0D] text-white pt-4 pb-4 px-4 sticky top-0 z-30 shadow-md border-b border-[#B39250]/20 space-y-3">
+        <!-- BANNER IMAGE & LINE USER BADGE -->
+        <div class="relative rounded-2xl overflow-hidden shadow-sm">
+            <img src="banner.jpg" alt="The Gallery Tennis House Banner" 
+                 class="w-full h-auto object-cover rounded-2xl border border-[#B39250]/40"
+                 onerror="this.onerror=null; this.src='https://placehold.co/800x250/0D0D0D/B39250?text=THE+GALLERY+TENNIS+HOUSE';">
+            
+            <div id="line-user-badge" class="hidden absolute top-2 right-2 inline-flex items-center gap-1.5 bg-[#0D0D0D]/80 backdrop-blur-md px-2.5 py-1 rounded-full border border-emerald-500/50 text-[11px] text-gray-200 shadow-md">
+                <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                <span id="line-user-name" class="font-medium truncate max-w-[90px]">LINE User</span>
             </div>
         </div>
 
@@ -100,7 +79,7 @@
     </header>
 
     <!-- MAIN FORM BODY -->
-    <main class="flex-1 p-4 sm:p-5 space-y-5 text-sm">
+    <main class="flex-1 p-4 sm:p-5 space-y-5 text-sm font-light">
 
         <!-- STEP 1: TYPE, COACH, DATE, DURATION & TIME -->
         <div id="step-1-content" class="space-y-4">
@@ -172,6 +151,7 @@
                         class="w-full p-3.5 pr-12 rounded-2xl border border-gray-300 bg-white font-bold text-sm sm:text-base text-gray-900 outline-none focus:border-[#B39250] shadow-sm">
                     <span class="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-600 text-lg">📅</span>
                 </div>
+                <p class="text-[11px] text-amber-800 font-light mt-1">📌 ขณะนี้เปิดให้จองล่วงหน้าได้ถึงวันที่ 31 สิงหาคม 2569 เท่านั้น</p>
             </div>
 
             <!-- 4. DURATION SELECTION -->
@@ -189,7 +169,7 @@
             <div class="space-y-2">
                 <div class="flex justify-between items-center">
                     <label class="block text-gray-900 font-bold text-sm sm:text-base">เลือกช่วงเวลาที่ต้องการ</label>
-                    <span id="court-rate-label" class="text-xs text-gray-500 font-medium">อัตราสนาม 400 ฿/ชม.</span>
+                    <span id="court-rate-label" class="text-xs text-gray-500 font-light">อัตราสนาม 400 ฿/ชม.</span>
                 </div>
                 <div class="relative">
                     <select id="time-slot-dropdown" onchange="onTimeSlotSelect(this.value)"
@@ -209,13 +189,13 @@
         <div id="step-2-content" class="hidden space-y-4">
             <div class="text-center py-1">
                 <span class="text-[#B39250] font-serif-custom font-bold text-base tracking-widest block">THE GALLERY</span>
-                <span class="text-xs text-gray-500 tracking-wider uppercase block font-semibold">กรอกข้อมูลผู้จองสนาม</span>
+                <span class="text-xs text-gray-500 tracking-wider uppercase block font-light">กรอกข้อมูลผู้จองสนาม</span>
             </div>
 
             <div class="bg-white p-4 sm:p-5 rounded-2xl border border-gray-200 shadow-sm space-y-3.5">
                 <div>
                     <label class="block text-gray-700 text-xs sm:text-sm font-bold mb-1">ชื่อ - นามสกุลผู้จอง *</label>
-                    <input type="text" id="cust-name" placeholder="ระบุชื่อ-นามสกุล" class="w-full p-3 border border-gray-300 rounded-xl text-sm sm:text-base font-medium outline-none focus:border-[#B39250]">
+                    <input type="text" id="cust-name" placeholder="ระบุชื่อ-นามสกุล" class="w-full p-3 border border-gray-300 rounded-xl text-sm sm:text-base font-light outline-none focus:border-[#B39250]">
                 </div>
                 <div>
                     <label class="block text-gray-700 text-xs sm:text-sm font-bold mb-1">เบอร์โทรศัพท์ติดต่อ *</label>
@@ -223,7 +203,7 @@
                 </div>
                 <div>
                     <label class="block text-gray-700 text-xs sm:text-sm font-bold mb-1">ระดับทักษะการเล่น</label>
-                    <select id="cust-skill" class="w-full p-3 border border-gray-300 rounded-xl text-sm sm:text-base font-medium outline-none bg-white">
+                    <select id="cust-skill" class="w-full p-3 border border-gray-300 rounded-xl text-sm sm:text-base font-light outline-none bg-white">
                         <option value="Beginner">เริ่มต้น (Beginner)</option>
                         <option value="Intermediate" selected>ปานกลาง (Intermediate)</option>
                         <option value="Advanced">มืออาชีพ (Advanced)</option>
@@ -231,7 +211,7 @@
                 </div>
                 <div>
                     <label class="block text-gray-700 text-xs sm:text-sm font-bold mb-1">หมายเหตุ / สิ่งที่ต้องการเน้น</label>
-                    <textarea id="cust-note" rows="2" class="w-full p-3 border border-gray-300 rounded-xl text-sm sm:text-base outline-none focus:border-[#B39250]" placeholder="ระบุเพิ่มเติม เช่น เน้นสอนลูก FH / Serve"></textarea>
+                    <textarea id="cust-note" rows="2" class="w-full p-3 border border-gray-300 rounded-xl text-sm sm:text-base font-light outline-none focus:border-[#B39250]" placeholder="ระบุเพิ่มเติม เช่น เน้นสอนลูก FH / Serve"></textarea>
                 </div>
             </div>
 
@@ -283,7 +263,7 @@
                 </div>
             </div>
 
-            <div class="bg-amber-50/80 p-3 rounded-2xl border border-amber-200 text-xs sm:text-sm text-amber-900 text-center font-semibold">
+            <div class="bg-amber-50/80 p-3 rounded-2xl border border-amber-200 text-xs sm:text-sm text-amber-900 text-center font-bold">
                 เมื่อชำระเงินแล้ว ไม่สามารถยกเลิกหรือคืนเงินได้ทุกกรณี
             </div>
 
@@ -296,7 +276,7 @@
         <!-- STEP 4: PAYMENT SCREEN WITH AUTOMATIC IMAGE COMPRESSION -->
         <div id="step-4-content" class="hidden space-y-4">
 
-            <!-- LARGE ENLARGED QR CODE CONTAINER (REMOVED OUTER CARD, HEADER TEXT, AND BLUE BANNER) -->
+            <!-- LARGE ENLARGED QR CODE CONTAINER -->
             <div class="text-center space-y-3 pt-1">
                 <div class="p-2 border border-gray-200 bg-white rounded-3xl shadow-sm inline-block w-full max-w-[340px] mx-auto">
                     <img src="qr.jpg" id="qr-image" alt="PromptPay QR Code" class="w-full h-auto object-contain mx-auto rounded-2xl"
@@ -343,22 +323,22 @@
                 </div>
                 <span class="text-[#B39250] font-serif-custom font-bold text-base tracking-widest block">THE GALLERY</span>
                 <h2 class="font-bold text-gray-900 text-lg sm:text-xl">กำลังรอแอดมินตรวจสอบยอดเงิน</h2>
-                <p class="text-xs sm:text-sm text-gray-600 max-w-xs mx-auto">
+                <p class="text-xs sm:text-sm text-gray-600 max-w-xs mx-auto font-light">
                     ระบบได้รับแจ้งชำระเงินแล้ว เจ้าหน้าที่กำลังตรวจสอบยอดโอน กรุณารอสักครู่ (หน้านี้จะอัปเดตให้อัตโนมัติ)
                 </p>
             </div>
 
             <div class="bg-white rounded-2xl border border-amber-200 p-4 sm:p-5 space-y-3 shadow-sm text-xs sm:text-sm">
                 <div class="flex justify-between items-center pb-2 border-b border-gray-100">
-                    <span class="text-gray-500 font-medium">รหัสจองชั่วคราว:</span>
+                    <span class="text-gray-500 font-light">รหัสจองชั่วคราว:</span>
                     <span id="p-booking-id" class="font-bold text-amber-800 font-mono text-base">GLY-XXXXXX</span>
                 </div>
                 <div class="flex justify-between items-center pb-2 border-b border-gray-100">
-                    <span class="text-gray-500 font-medium">สถานะ:</span>
+                    <span class="text-gray-500 font-light">สถานะ:</span>
                     <span class="bg-amber-100 text-amber-900 font-bold px-3 py-1 rounded-full text-xs animate-pulse">⏳ รอแอดมินตรวจสอบสลิป</span>
                 </div>
                 <div class="flex justify-between items-center pb-2 border-b border-gray-100">
-                    <span class="text-gray-500 font-medium">วันและเวลา:</span>
+                    <span class="text-gray-500 font-light">วันและเวลา:</span>
                     <span id="p-datetime" class="font-bold text-gray-800">-</span>
                 </div>
                 <div class="flex justify-between items-center pt-1 font-bold text-sm sm:text-base">
@@ -367,7 +347,7 @@
                 </div>
             </div>
 
-            <div class="bg-blue-50 p-3.5 rounded-2xl border border-blue-200 text-xs text-blue-900 flex items-start gap-2">
+            <div class="bg-blue-50 p-3.5 rounded-2xl border border-blue-200 text-xs text-blue-900 flex items-start gap-2 font-light">
                 <span class="text-base">💡</span>
                 <span>ระบบจะส่งข้อความแจ้งเตือนยืนยันเข้า LINE OA ของท่านทันทีเมื่อแอดมินกดยืนยันยอดเงินสำเร็จ</span>
             </div>
@@ -381,7 +361,7 @@
                 </div>
                 <span class="text-[#B39250] font-serif-custom font-bold text-base tracking-widest block">THE GALLERY TENNIS HOUSE</span>
                 <h2 class="font-bold text-emerald-800 text-lg sm:text-xl">การจองได้รับอนุมัติเรียบร้อยแล้ว!</h2>
-                <p class="text-xs text-gray-500">ขอบพระคุณที่ใช้บริการ The Gallery House</p>
+                <p class="text-xs text-gray-500 font-light">ขอบพระคุณที่ใช้บริการ The Gallery House</p>
             </div>
 
             <div class="bg-white rounded-2xl border border-emerald-300 p-4 sm:p-5 space-y-3 shadow-md text-sm sm:text-base relative overflow-hidden">
@@ -389,27 +369,27 @@
                     BOOKING CONFIRMED &amp; APPROVED
                 </div>
                 <div class="flex justify-between items-center pb-2.5 border-b border-gray-100">
-                    <span class="text-gray-500 font-medium">รหัสอ้างอิงการจอง:</span>
+                    <span class="text-gray-500 font-light">รหัสอ้างอิงการจอง:</span>
                     <span id="success-booking-id" class="font-bold text-[#B39250] font-mono text-base sm:text-lg">GLY-888999</span>
                 </div>
                 <div class="flex justify-between items-center pb-2.5 border-b border-gray-100">
-                    <span class="text-gray-500 font-medium">ประเภทการจอง:</span>
+                    <span class="text-gray-500 font-light">ประเภทการจอง:</span>
                     <span id="success-type-desc" class="font-bold text-gray-800">เช่าสนามอย่างเดียว</span>
                 </div>
                 <div class="flex justify-between items-center pb-2.5 border-b border-gray-100">
-                    <span class="text-gray-500 font-medium">ผู้จอง:</span>
+                    <span class="text-gray-500 font-light">ผู้จอง:</span>
                     <span id="s-cust" class="font-bold text-gray-800">-</span>
                 </div>
                 <div class="flex justify-between items-center pb-2.5 border-b border-gray-100">
-                    <span class="text-gray-500 font-medium">สนาม:</span>
+                    <span class="text-gray-500 font-light">สนาม:</span>
                     <span id="s-court" class="font-bold text-gray-800">Indoor Tennis Court</span>
                 </div>
                 <div id="s-coach-row" class="hidden flex justify-between items-center pb-2.5 border-b border-gray-100">
-                    <span class="text-gray-500 font-medium">โค้ชผู้สอน:</span>
+                    <span class="text-gray-500 font-light">โค้ชผู้สอน:</span>
                     <span id="s-coach" class="font-bold text-emerald-700">-</span>
                 </div>
                 <div class="flex justify-between items-center pb-2.5 border-b border-gray-100">
-                    <span class="text-gray-500 font-medium">วันและเวลาเล่น:</span>
+                    <span class="text-gray-500 font-light">วันและเวลาเล่น:</span>
                     <span id="s-datetime" class="font-bold text-gray-800">-</span>
                 </div>
                 <div class="flex justify-between items-center pt-1 font-bold text-base sm:text-lg">
@@ -426,19 +406,19 @@
     </main>
 
     <!-- FOOTER -->
-    <footer class="p-3.5 text-center text-gray-500 text-xs border-t border-gray-200 bg-white font-medium">
+    <footer class="p-3.5 text-center text-gray-500 text-xs border-t border-gray-200 bg-white font-light">
         © The Gallery Tennis House (LIFF Booking System)
     </footer>
 
     <!-- Toast Notification -->
-    <div id="toast-bg" class="hidden fixed top-5 left-1/2 transform -translate-x-1/2 z-50 flex items-center gap-2.5 bg-[#1A1A1A] text-white px-6 py-3.5 rounded-full shadow-2xl border border-[#B39250] text-sm font-medium">
+    <div id="toast-bg" class="hidden fixed top-5 left-1/2 transform -translate-x-1/2 z-50 flex items-center gap-2.5 bg-[#1A1A1A] text-white px-6 py-3.5 rounded-full shadow-2xl border border-[#B39250] text-sm font-light">
         <span id="toast-dot" class="w-3 h-3 rounded-full bg-emerald-500"></span>
         <span id="toast-msg">ข้อความแจ้งเตือน</span>
     </div>
 
     <!-- APPLICATION LOGIC -->
     <script>
-        // --- 1. UTILITY FUNCTIONS DECLARED FIRST ---
+        // --- 1. UTILITY FUNCTIONS DECLARED FIRST TO AVOID REFERENCE ERRORS ---
         function safeGetStorage(key, fallback) {
             try {
                 const data = localStorage.getItem(key);
@@ -571,7 +551,6 @@
         let adminClosedSlots = safeGetStorage('gallery_admin_closed_slots', {});
         let coachCustomAvailability = safeGetStorage('gallery_coach_availability', {});
 
-        // ฟังก์ชันดึงเฉพาะโค้ชที่ถูกเปิดใช้งาน (Active)
         function getActiveCoaches() {
             return COACHES.map(c => {
                 const sCoach = (settings.coaches || []).find(sc => sc.id === c.id);
@@ -585,7 +564,19 @@
 
         // --- 3. CORE ACTION FUNCTIONS ---
         window.onload = function() {
-            document.getElementById('booking-date').value = selectedDate;
+            const todayStr = new Date().toISOString().split('T')[0];
+            const maxBookingDate = '2026-08-31';
+            
+            const dateInput = document.getElementById('booking-date');
+            if (dateInput) {
+                dateInput.min = todayStr;
+                dateInput.max = maxBookingDate;
+                if (selectedDate > maxBookingDate) {
+                    selectedDate = maxBookingDate;
+                }
+                dateInput.value = selectedDate;
+            }
+
             renderCoaches();
             renderTimeSlots();
             initLineLIFF();
@@ -631,6 +622,21 @@
             }
         };
 
+        function initLineLIFF() {
+            if (typeof liff !== 'undefined') {
+                liff.init({ liffId: "2001234567-AbCdEfGh" }).then(() => {
+                    if (liff.isLoggedIn()) {
+                        liff.getProfile().then(profile => {
+                            lineProfile = profile;
+                            document.getElementById('cust-name').value = profile.displayName;
+                            document.getElementById('line-user-name').innerText = profile.displayName;
+                            document.getElementById('line-user-badge').classList.remove('hidden');
+                        });
+                    }
+                }).catch(err => console.log("LIFF Init Fallback"));
+            }
+        }
+
         function setBookingType(type) {
             bookingType = type;
             const types = ['court_only', 'court_and_coach', 'court_and_knocker', 'court_and_ballmachine'];
@@ -658,6 +664,21 @@
                 if (coachSection) coachSection.classList.add('hidden');
             }
 
+            renderTimeSlots();
+        }
+
+        function setBookingDuration(hours) {
+            bookingDuration = hours;
+            for (let i = 1; i <= 4; i++) {
+                const btn = document.getElementById(`btn-dur-${i}`);
+                if (btn) {
+                    if (i === hours) {
+                        btn.className = "py-3 rounded-2xl font-bold text-sm sm:text-base border border-[#B39250] bg-[#1A1A1A] text-white shadow-sm";
+                    } else {
+                        btn.className = "py-3 rounded-2xl font-bold text-sm sm:text-base border border-gray-200 bg-white text-gray-800 hover:border-[#B39250]";
+                    }
+                }
+            }
             renderTimeSlots();
         }
 
@@ -689,11 +710,11 @@
                             <div class="flex justify-between items-start gap-1">
                                 <div>
                                     <h4 class="font-bold text-gray-900 text-base leading-snug">${coach.name}</h4>
-                                    <p class="text-xs text-gray-600 flex items-center gap-1 mt-0.5">🗓️ ${coach.daysText}</p>
+                                    <p class="text-xs text-gray-600 flex items-center gap-1 mt-0.5 font-light">🗓️ ${coach.daysText}</p>
                                 </div>
                                 <span class="font-bold text-emerald-800 text-sm shrink-0">${coach.price} / ชั่วโมง</span>
                             </div>
-                            <p class="text-xs text-gray-500 mt-1 line-clamp-2">${coach.desc}</p>
+                            <p class="text-xs text-gray-500 mt-1 line-clamp-2 font-light">${coach.desc}</p>
                             <p class="text-[11px] text-gray-700 font-semibold mt-1">👥 ${coach.studentText}</p>
                         </div>
                     </div>`;
@@ -701,7 +722,17 @@
             });
         }
 
-        function onDateChange(val) { selectedDate = val; renderTimeSlots(); }
+        function onDateChange(val) { 
+            const maxBookingDate = '2026-08-31';
+            if (val > maxBookingDate) {
+                showToast('ขณะนี้เปิดรับจองล่วงหน้าได้ถึงวันที่ 31 สิงหาคม 2569 เท่านั้น', true);
+                document.getElementById('booking-date').value = maxBookingDate;
+                selectedDate = maxBookingDate;
+            } else {
+                selectedDate = val; 
+            }
+            renderTimeSlots(); 
+        }
 
         function isCoachSetAvailable(coachId, dateStr, slotStr) {
             const key = `${coachId}_${dateStr}`;
@@ -790,7 +821,12 @@
                 option.value = slotStr;
                 const status = checkSlotAvailability(slotStr);
 
-                const hourlyPrice = currentCourtRate + (bookingType === 'court_and_coach' && selectedCoach ? selectedCoach.price : 0);
+                let extraFeePerHour = 0;
+                if (bookingType === 'court_and_coach' && selectedCoach) extraFeePerHour = selectedCoach.price;
+                else if (bookingType === 'court_and_knocker') extraFeePerHour = settings.rateKnocker || 300;
+                else if (bookingType === 'court_and_ballmachine') extraFeePerHour = settings.rateBallMachine || 250;
+
+                const hourlyPrice = currentCourtRate + extraFeePerHour;
                 const totalPrice = hourlyPrice * bookingDuration;
 
                 if (!status.available) {
@@ -889,10 +925,14 @@
             const custPhone = document.getElementById('cust-phone').value.trim() || '08X-XXX-XXXX';
             
             const currentCourtRate = getCourtHourlyRate(selectedDate);
-            const coachFeePerHour = (bookingType === 'court_and_coach' && selectedCoach) ? selectedCoach.price : 0;
+            let extraFeePerHour = 0;
+            if (bookingType === 'court_and_coach' && selectedCoach) extraFeePerHour = selectedCoach.price;
+            else if (bookingType === 'court_and_knocker') extraFeePerHour = settings.rateKnocker || 300;
+            else if (bookingType === 'court_and_ballmachine') extraFeePerHour = settings.rateBallMachine || 250;
+
             const courtFeeTotal = currentCourtRate * bookingDuration;
-            const coachFeeTotal = coachFeePerHour * bookingDuration;
-            const totalPrice = courtFeeTotal + coachFeeTotal;
+            const extraFeeTotal = extraFeePerHour * bookingDuration;
+            const totalPrice = courtFeeTotal + extraFeeTotal;
 
             document.getElementById('summary-booking-type').innerText = getBookingTypeLabel(bookingType);
             const coachRow = document.getElementById('summary-coach-row');
@@ -908,7 +948,6 @@
             document.getElementById('payment-amount').innerText = `${totalPrice.toFixed(2)} ฿`;
         }
 
-        // AUTO IMAGE COMPRESSION BEFORE SAVING TO LOCALSTORAGE
         function handleSlipSelected(e) {
             const file = e.target.files[0];
             if (!file) return;
@@ -960,10 +999,14 @@
             currentActiveBookingId = bookingId;
 
             const courtRate = getCourtHourlyRate(selectedDate);
-            const coachFeePerHour = (bookingType === 'court_and_coach' && selectedCoach) ? selectedCoach.price : 0;
+            let extraFeePerHour = 0;
+            if (bookingType === 'court_and_coach' && selectedCoach) extraFeePerHour = selectedCoach.price;
+            else if (bookingType === 'court_and_knocker') extraFeePerHour = settings.rateKnocker || 300;
+            else if (bookingType === 'court_and_ballmachine') extraFeePerHour = settings.rateBallMachine || 250;
+
             const courtFeeTotal = courtRate * bookingDuration;
-            const coachFeeTotal = coachFeePerHour * bookingDuration;
-            const totalPrice = courtFeeTotal + coachFeeTotal;
+            const extraFeeTotal = extraFeePerHour * bookingDuration;
+            const totalPrice = courtFeeTotal + extraFeeTotal;
 
             let driveFileUrl = '';
             if (GOOGLE_DRIVE_SCRIPT_URL && uploadedSlipBase64) {
@@ -992,7 +1035,7 @@
                 courtPrice: courtFeeTotal,
                 coachId: selectedCoach ? selectedCoach.id : null,
                 coachName: selectedCoach ? selectedCoach.name : null,
-                coachPrice: coachFeeTotal,
+                coachPrice: extraFeeTotal,
                 totalPrice: totalPrice,
                 date: selectedDate,
                 timeSlot: selectedTime,

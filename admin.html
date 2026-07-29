@@ -160,7 +160,7 @@
                                 </div>
                                 <div>
                                     <label class="block text-gray-700 font-bold mb-1">ค่าเครื่องยิงบอล:</label>
-                                    <input type="number" id="cfg-rate-[#B39250]" class="w-full p-2.5 bg-white border border-gray-300 rounded-xl font-bold outline-none">
+                                    <input type="number" id="cfg-rate-ballmachine" class="w-full p-2.5 bg-white border border-gray-300 rounded-xl font-bold outline-none">
                                 </div>
                             </div>
                         </div>
@@ -620,6 +620,7 @@
             return slots;
         }
 
+        // --- STREAMING_CHUNK:Writing authentication and tab navigation logic... ---
         // --- 3. AUTH & NAVIGATION ---
         function handleLogin(e) {
             e.preventDefault();
@@ -734,12 +735,13 @@
             }
         }
 
+        // --- STREAMING_CHUNK:Writing pricing settings and coach controls logic... ---
         // --- 4. PRICING & COACH SETTINGS MANAGEMENT ---
         function loadPricingToInputs() {
             if (document.getElementById('cfg-rate-weekday')) document.getElementById('cfg-rate-weekday').value = settings.rateWeekday || 400;
             if (document.getElementById('cfg-rate-weekend')) document.getElementById('cfg-rate-weekend').value = settings.rateWeekend || 500;
             if (document.getElementById('cfg-rate-knocker')) document.getElementById('cfg-rate-knocker').value = settings.rateKnocker || 300;
-            if (document.getElementById('cfg-rate-[#B39250]')) document.getElementById('cfg-rate-[#B39250]').value = settings.rateBallMachine || 250;
+            if (document.getElementById('cfg-rate-ballmachine')) document.getElementById('cfg-rate-ballmachine').value = settings.rateBallMachine || 250;
 
             const coachContainer = document.getElementById('coach-settings-list');
             if (!coachContainer) return;
@@ -778,7 +780,7 @@
             settings.rateWeekday = parseInt(document.getElementById('cfg-rate-weekday').value) || 400;
             settings.rateWeekend = parseInt(document.getElementById('cfg-rate-weekend').value) || 500;
             settings.rateKnocker = parseInt(document.getElementById('cfg-rate-knocker').value) || 300;
-            settings.rateBallMachine = parseInt(document.getElementById('cfg-rate-[#B39250]').value) || 250;
+            settings.rateBallMachine = parseInt(document.getElementById('cfg-rate-ballmachine').value) || 250;
 
             settings.coaches.forEach(c => {
                 const priceInput = document.getElementById(`cfg-coach-price-${c.id}`);
@@ -797,6 +799,7 @@
             showToast('บันทึกการตั้งค่าราคาและสถานะโค้ชเรียบร้อยแล้ว!');
         }
 
+        // --- STREAMING_CHUNK:Writing slip approval modal and pending queue functions... ---
         // --- 5. APPROVAL MODAL & STATUS MANAGEMENT ---
         function approveBooking(id) {
             const index = bookings.findIndex(b => b.bookingId === id);
@@ -1039,6 +1042,7 @@
             });
         }
 
+        // --- STREAMING_CHUNK:Writing dashboard metrics and booking table renderers... ---
         function renderAdminDashboard() {
             renderPendingApprovals();
             renderAdminCourtClosure();
@@ -1136,6 +1140,7 @@
             showToast('ยกเลิกรายการเรียบร้อย');
         }
 
+        // --- STREAMING_CHUNK:Writing coach view and schedule rendering functions... ---
         // --- 6. COACH VIEW FUNCTIONS ---
         function renderCoachTabButtons() {
             const container = document.getElementById('coach-tab-buttons-container');
@@ -1280,6 +1285,7 @@
             showToast('อัปเดตสถานะเวลาสอนเรียบร้อย');
         }
 
+        // --- STREAMING_CHUNK:Writing weekly summary dashboard and timetable matrix grid renderer... ---
         // --- 7. WEEKLY DASHBOARD RENDER ---
         function changeWeek(offset) {
             const parts = weeklyStartMondayStr.split('-').map(Number);
