@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>The Gallery Tennis House - Backend Portal (Admin & Coach)</title>
+    <title>The Gallery Tennis House - Backend Portal</title>
 
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -54,11 +54,11 @@
                     <input type="password" id="login-password" required placeholder="••••••••" class="w-full p-3 border border-gray-300 rounded-xl font-mono outline-none focus:border-[#B39250]">
                 </div>
                 
-                <div class="bg-amber-50 p-3.5 rounded-2xl border border-amber-200 text-xs sm:text-sm text-amber-900 space-y-1 font-mono">
+                <!-- <div class="bg-amber-50 p-3.5 rounded-2xl border border-amber-200 text-xs sm:text-sm text-amber-900 space-y-1 font-mono">
                     <p class="font-bold text-amber-950">🔑 รหัสผ่านทดสอบเบื้องต้น:</p>
                     <p class="font-light">• แอดมิน: admin / admin123</p>
                     <p class="font-light">• โค้ช: coach / coach123</p>
-                </div>
+                </div> -->
 
                 <button type="submit" class="w-full py-3.5 bg-[#1A1A1A] hover:bg-[#333] text-white rounded-2xl font-bold text-base transition-all shadow-md">
                     เข้าสู่ระบบ (Sign In)
@@ -622,6 +622,75 @@
 
         // --- STREAMING_CHUNK:Writing authentication and tab navigation logic... ---
         // --- 3. AUTH & NAVIGATION ---
+        let firebaseListenersInitialized = false;
+
+        function initFirebaseListeners() {
+            if (firebaseListenersInitialized) return;
+            firebaseListenersInitialized = true;
+
+            if (useFirebase && db) {
+                db.collection("bookings").onSnapshot((snapshot) => {
+                    const loaded = []; snapshot.forEach(doc => {
+                        const data = doc.data();
+                        loaded.push({ ...data, status: data.status || 'confirmed' });
+                    });
+                    bookings = loaded; safeSetStorage('gallery_bookings', bookings); renderAdminDashboard(); renderCoachView(); renderWeeklyDashboard();
+                });
+                db.collection("admin_closed_slots").onSnapshot((snapshot) => {
+                    const loaded = {}; snapshot.forEach(doc => loaded[doc.id] = doc.data());
+                    adminClosedSlots = loaded; safeSetStorage('gallery_admin_closed_slots', adminClosedSlots); renderAdminCourtClosure(); renderWeeklyDashboard();
+                });
+                db.collection("coach_availability").onSnapshot((snapshot) => {
+                    const loaded = {}; snapshot.forEach(doc => loaded[doc.id] = doc.data().slots || {});
+                    coachCustomAvailability = loaded; safeSetStorage('gallery_coach_availability', coachCustomAvailability); renderCoachView(); renderWeeklyDashboard();
+                });
+                db.collection("settings").doc("pricing").onSnapshot((doc) => {
+                    if (doc.exists) {
+                        settings = doc.data();
+                        safeSetStorage('gallery_settings', settings);
+                        loadPricingToInputs();
+                        renderCoachTabButtons();
+                        renderCoachView();
+                    }
+                });
+            }
+        }
+
+        function checkSessionOnLoad() {
+            const savedRole = safeGetStorage('gallery_session_role', null);
+            if (savedRole === 'admin' || savedRole === 'coach') {
+                userRole = savedRole;
+                document.getElementById('login-overlay')?.classList.add('hidden');
+                document.getElementById('dashboard-app')?.classList.remove('hidden');
+
+                document.getElementById('admin-close-date').value = adminCloseDate;
+                document.getElementById('coach-schedule-date').value = coachScheduleDate;
+
+                loadPricingToInputs();
+
+                if (document.getElementById('operating-open-time')) {
+                    document.getElementById('operating-open-time').value = courtOperatingHours.startHour || 6;
+                }
+                if (document.getElementById('operating-close-time')) {
+                    document.getElementById('operating-close-time').value = courtOperatingHours.endHour || 22;
+                }
+
+                if (userRole === 'coach') {
+                    switchTab('coach');
+                    document.getElementById('btn-tab-admin')?.classList.add('hidden');
+                } else {
+                    switchTab('admin');
+                    document.getElementById('btn-tab-admin')?.classList.remove('hidden');
+                }
+
+                renderAdminDashboard();
+                renderCoachView();
+                renderWeeklyDashboard();
+
+                initFirebaseListeners();
+            }
+        }
+
         function handleLogin(e) {
             e.preventDefault();
             const u = document.getElementById('login-username').value.trim();
@@ -635,6 +704,8 @@
                 showToast('ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง!', true);
                 return;
             }
+
+            safeSetStorage('gallery_session_role', userRole);
 
             document.getElementById('login-overlay').classList.add('hidden');
             document.getElementById('dashboard-app').classList.remove('hidden');
@@ -663,43 +734,22 @@
             renderCoachView();
             renderWeeklyDashboard();
 
-            if (useFirebase && db) {
-                db.collection("bookings").onSnapshot((snapshot) => {
-                    const loaded = []; snapshot.forEach(doc => {
-                        const data = doc.data();
-                        loaded.push({ ...data, status: data.status || 'confirmed' });
-                    });
-                    bookings = loaded; safeSetStorage('gallery_bookings', bookings); renderAdminDashboard(); renderCoachView(); renderWeeklyDashboard();
-                });
-                db.collection("admin_closed_slots").onSnapshot((snapshot) => {
-                    const loaded = {}; snapshot.forEach(doc => loaded[doc.id] = doc.data());
-                    adminClosedSlots = loaded; safeSetStorage('gallery_admin_closed_slots', adminClosedSlots); renderAdminCourtClosure(); renderWeeklyDashboard();
-                });
-                db.collection("coach_availability").onSnapshot((snapshot) => {
-                    const loaded = {}; snapshot.forEach(doc => loaded[doc.id] = doc.data().slots || {});
-                    coachCustomAvailability = loaded; safeSetStorage('gallery_coach_availability', coachCustomAvailability); renderCoachView(); renderWeeklyDashboard();
-                });
-                db.collection("settings").doc("pricing").onSnapshot((doc) => {
-                    if (doc.exists) {
-                        settings = doc.data();
-                        safeSetStorage('gallery_settings', settings);
-                        loadPricingToInputs();
-                        renderCoachTabButtons();
-                        renderCoachView();
-                    }
-                });
-            }
+            initFirebaseListeners();
 
             showToast(`ยินดีต้อนรับเข้าสู่ระบบ (${userRole.toUpperCase()})`);
         }
 
         function handleLogout() {
             userRole = null;
+            try { localStorage.removeItem('gallery_session_role'); } catch (e) {}
             document.getElementById('dashboard-app').classList.add('hidden');
             document.getElementById('login-overlay').classList.remove('hidden');
             document.getElementById('login-username').value = '';
             document.getElementById('login-password').value = '';
+            showToast('ออกจากระบบเรียบร้อยแล้ว');
         }
+
+        window.addEventListener('DOMContentLoaded', checkSessionOnLoad);
 
         function switchTab(tabName) {
             const vAdmin = document.getElementById('view-admin');
