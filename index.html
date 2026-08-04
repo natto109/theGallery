@@ -23,6 +23,9 @@
     <!-- External Firebase Config -->
     <script src="firebase-config.js"></script>
 
+    <!-- Centralized Coaches Config -->
+    <script src="coaches.js"></script>
+
     <style>
         body {
             font-family: 'Kanit', sans-serif;
@@ -81,7 +84,7 @@
     <!-- MAIN FORM BODY -->
     <main class="flex-1 p-4 sm:p-5 space-y-5 text-sm font-light">
 
-        <!-- STEP 1: TYPE, COACH, DATE, DURATION & TIME -->
+        <!-- STEP 1: TYPE, COACH, STUDENT COUNT, DATE, DURATION & TIME -->
         <div id="step-1-content" class="space-y-4">
             
             <div id="active-type-badge-row" class="hidden flex justify-end">
@@ -138,12 +141,24 @@
                 </div>
             </div>
 
-            <!-- 2. COACH SELECTION -->
-            <div id="coach-selection-section" class="hidden space-y-3 pt-1">
+            <!-- 2. COACH SELECTION & STUDENT COUNT (DYNAMIC) -->
+            <div id="coach-selection-section" class="hidden space-y-3.5 bg-amber-50/60 p-4 rounded-3xl border border-amber-200/80">
                 <div class="space-y-3" id="coach-list-container"></div>
+
+                <!-- STUDENT COUNT SELECTOR (MAX 4 STUDENTS) -->
+                <div class="space-y-2 pt-3 border-t border-amber-200/80">
+                    <label class="block text-gray-900 font-bold text-xs sm:text-sm">👥 เลือกจำนวนนักเรียน (สูงสุด 4 คน)</label>
+                    <div class="grid grid-cols-4 gap-2">
+                        <button type="button" onclick="setStudentCount(1)" id="btn-student-1" class="py-2.5 rounded-2xl font-bold text-xs sm:text-sm border border-[#B39250] bg-[#1A1A1A] text-white shadow-xs">1 คน</button>
+                        <button type="button" onclick="setStudentCount(2)" id="btn-student-2" class="py-2.5 rounded-2xl font-bold text-xs sm:text-sm border border-gray-300 bg-white text-gray-800 hover:border-[#B39250]">2 คน</button>
+                        <button type="button" onclick="setStudentCount(3)" id="btn-student-3" class="py-2.5 rounded-2xl font-bold text-xs sm:text-sm border border-gray-300 bg-white text-gray-800 hover:border-[#B39250]">3 คน</button>
+                        <button type="button" onclick="setStudentCount(4)" id="btn-student-4" class="py-2.5 rounded-2xl font-bold text-xs sm:text-sm border border-gray-300 bg-white text-gray-800 hover:border-[#B39250]">4 คน</button>
+                    </div>
+                    <p class="text-[11px] text-amber-900 font-medium">💡 สูตรคิดราคาค่าสอน: (ค่าสอนของโค้ช) × (จำนวนนักเรียน) บาท/ชม.</p>
+                </div>
             </div>
 
-            <!-- 3. DATE SELECTION -->
+            <!-- 3. DATE SELECTION WITH AUGUST 31 LIMIT -->
             <div class="space-y-2">
                 <label class="block text-gray-900 font-bold text-sm sm:text-base">เลือกวันที่ต้องการจอง</label>
                 <div class="relative">
@@ -241,9 +256,9 @@
                     <span class="text-gray-900 font-bold">สนาม:</span>
                     <span class="font-bold text-gray-900">Indoor Tennis Court</span>
                 </div>
-                <div id="summary-coach-row" class="hidden flex justify-between items-center pb-2.5 border-b border-gray-100">
-                    <span class="text-gray-900 font-bold">โค้ชผู้สอน:</span>
-                    <span id="summary-coach-name" class="font-bold text-emerald-700">-</span>
+                <div id="summary-coach-row" class="hidden flex justify-between items-start pb-2.5 border-b border-gray-100">
+                    <span class="text-gray-900 font-bold shrink-0">โค้ชผู้สอน:</span>
+                    <span id="summary-coach-name" class="font-bold text-emerald-700 text-right">-</span>
                 </div>
                 <div class="flex justify-between items-center pb-2.5 border-b border-gray-100">
                     <span class="text-gray-900 font-bold">วันที่:</span>
@@ -259,7 +274,7 @@
                 </div>
                 <div class="flex justify-between items-center pt-1 font-bold text-base sm:text-lg">
                     <span class="text-gray-900 font-bold">ราคารวมสุทธิ:</span>
-                    <span id="summary-total-price" class="text-[#B39250] text-xl font-bold">850 บาท</span>
+                    <span id="summary-total-price" class="text-[#B39250] text-xl font-bold">0 บาท</span>
                 </div>
             </div>
 
@@ -430,6 +445,14 @@
             try { localStorage.setItem(key, JSON.stringify(value)); } catch (e) {}
         }
 
+        function getTodayStr() {
+            const d = new Date();
+            const yyyy = d.getFullYear();
+            const mm = String(d.getMonth() + 1).padStart(2, '0');
+            const dd = String(d.getDate()).padStart(2, '0');
+            return `${yyyy}-${mm}-${dd}`;
+        }
+
         function formatDateThai(dateStr) {
             if (!dateStr) return '';
             const parts = dateStr.split('-');
@@ -440,12 +463,13 @@
         }
 
         function getCourtHourlyRate(dateStr) {
-            if (!dateStr) return 400;
+            const settings = safeGetStorage('gallery_settings', { rateWeekday: 400, rateWeekend: 500 });
+            if (!dateStr) return settings.rateWeekday || 400;
             const parts = dateStr.split('-');
-            if (parts.length < 3) return 400;
+            if (parts.length < 3) return settings.rateWeekday || 400;
             const d = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
             const day = d.getDay();
-            return (day === 0 || day === 6) ? 500 : 400; // Weekend/Holiday = 500, Weekday = 400
+            return (day === 0 || day === 6) ? (settings.rateWeekend || 500) : (settings.rateWeekday || 400);
         }
 
         function getBookingTypeLabel(type) {
@@ -482,160 +506,43 @@
         const SINGLE_COURT = { id: 'tennis_indoor', name: 'Indoor Tennis Court' };
         let courtOperatingHours = safeGetStorage('gallery_court_operating_hours', { startHour: 6, endHour: 22 });
 
-        const COACHES = [
-            { 
-                id: 'coach_gun', 
-                name: 'Coach Gun', 
-                title: 'PREMIUM COACH', 
-                price: 1700, 
-                availableDays: [0,1,2,3,4,5,6], 
-                avatar: 'coach1.png',
-                daysText: 'สอนทุกวัน จันทร์ - อาทิตย์', 
-                desc: 'สอนทุกระดับ ตั้งแต่พื้นฐานถึงระดับสูง เน้นเทคนิค วางแผนการเล่น และพัฒนาจิตใจนักกีฬา',
-                studentText: 'รับนักเรียน : เดี่ยว / กลุ่ม (1-4 คน)'
-            },
-            { 
-                id: 'coach_nok', 
-                name: 'Coach Nok', 
-                title: 'PROFESSIONAL COACH', 
-                price: 800, 
-                availableDays: [2,3,4], 
-                avatar: 'coach2.png',
-                daysText: 'สอนวัน อังคาร - พุธ - พฤหัสบดี', 
-                desc: 'สอนทุกระดับ ตั้งแต่พื้นฐานถึงระดับสูง เน้นความเข้าใจเทคนิค และการฝึกที่ถูกต้อง',
-                studentText: 'รับนักเรียน : เดี่ยว / กลุ่ม (1-4 คน)'
-            },
-            { 
-                id: 'coach_to', 
-                name: 'Coach To', 
-                title: 'ASSISTANT COACH', 
-                price: 600, 
-                availableDays: [5,6,0], 
-                avatar: 'coach3.png',
-                daysText: 'สอนวัน ศุกร์ - เสาร์ - อาทิตย์', 
-                desc: 'สอนทุกระดับ ตั้งแต่พื้นฐานถึงระดับสูง เน้นความเข้าใจเกม การเคลื่อนไหว และการฝึกซ้อมที่นำไปใช้ได้จริง',
-                studentText: 'รับนักเรียน : เดี่ยว / กลุ่ม (1-5 คน)'
+        // Load Central Coaches list directly from coaches.js
+        function getActiveCoaches() {
+            const centralList = (typeof window.COACHES_DATA !== 'undefined' && window.COACHES_DATA.length > 0) 
+                ? window.COACHES_DATA 
+                : [
+                    { id: 'coach1', name: 'Coach Gun', price: 1700, active: true, availableDays: [0,1,2,3,4,5,6], avatar: 'coach1.png', daysText: 'สอนทุกวัน จันทร์ - อาทิตย์', desc: 'สอนทุกระดับ ตั้งแต่พื้นฐานถึงระดับสูง', studentText: 'รับนักเรียน : เดี่ยว / กลุ่ม (1-4 คน)' },
+                    { id: 'coach2', name: 'Coach Nok', price: 800, active: true, availableDays: [2,3,4], avatar: 'coach2.png', daysText: 'สอนวัน อังคาร - พุธ - พฤหัสบดี', desc: 'สอนทุกระดับ ตั้งแต่พื้นฐานถึงระดับสูง', studentText: 'รับนักเรียน : เดี่ยว / กลุ่ม (1-4 คน)' },
+                    { id: 'coach3', name: 'Coach To', price: 600, active: true, availableDays: [5,6,0], avatar: 'coach3.png', daysText: 'สอนวัน ศุกร์ - เสาร์ - อาทิตย์', desc: 'สอนทุกระดับ ตั้งแต่พื้นฐานถึงระดับสูง', studentText: 'รับนักเรียน : เดี่ยว / กลุ่ม (1-5 คน)' }
+                ];
+
+            const settings = safeGetStorage('gallery_settings', null);
+            if (!settings || !settings.coaches) {
+                return centralList.filter(c => c.active !== false);
             }
-        ];
+
+            // Merge price and active status from admin settings while using text from coaches.js
+            return centralList.map(c => {
+                const settingMatch = settings.coaches.find(sc => sc.id === c.id || sc.name === c.name);
+                return settingMatch ? { ...c, price: settingMatch.price, active: settingMatch.active } : c;
+            }).filter(c => c.active !== false);
+        }
 
         let bookingType = 'court_only';
+        let studentCount = 1;
         let bookingDuration = 1;
         let selectedCoach = null;
-        let selectedDate = new Date().toISOString().split('T')[0];
+        let selectedDate = getTodayStr();
         let selectedTime = null;
         let lineProfile = { userId: '', displayName: '' };
-
-        // โหลดค่าตั้งค่าการเปิด/ปิดโค้ช และราคาบริการจาก Admin
-        let settings = safeGetStorage('gallery_settings', {
-            rateWeekday: 400,
-            rateWeekend: 500,
-            rateKnocker: 300,
-            rateBallMachine: 250,
-            coaches: [
-                { id: 'coach_gun', name: 'Coach Gun', title: 'PREMIUM COACH', price: 1700, active: true },
-                { id: 'coach_nok', name: 'Coach Nok', title: 'PROFESSIONAL COACH', price: 800, active: true },
-                { id: 'coach_to', name: 'Coach To', price: 600, active: true }
-            ]
-        });
+        let pendingSlipBase64 = null;
 
         let timerInterval = null;
         let paymentCountdown = 600;
-        let currentActiveBookingId = null;
-        let activeDocUnsubscribe = null;
-        let uploadedSlipBase64 = '';
 
-        const GOOGLE_DRIVE_SCRIPT_URL = ""; 
-
-        let rawBookings = safeGetStorage('gallery_bookings', []);
-        let bookings = rawBookings.map(b => ({ ...b, status: b.status || 'confirmed' }));
+        let bookings = safeGetStorage('gallery_bookings', []);
         let adminClosedSlots = safeGetStorage('gallery_admin_closed_slots', {});
         let coachCustomAvailability = safeGetStorage('gallery_coach_availability', {});
-
-        function getActiveCoaches() {
-            return COACHES.map(c => {
-                const sCoach = (settings.coaches || []).find(sc => sc.id === c.id);
-                return {
-                    ...c,
-                    price: sCoach ? sCoach.price : c.price,
-                    active: sCoach ? (sCoach.active !== false) : true
-                };
-            }).filter(c => c.active);
-        }
-
-        // --- 3. CORE ACTION FUNCTIONS ---
-        window.onload = function() {
-            const todayStr = new Date().toISOString().split('T')[0];
-            const maxBookingDate = '2026-08-31';
-            
-            const dateInput = document.getElementById('booking-date');
-            if (dateInput) {
-                dateInput.min = todayStr;
-                dateInput.max = maxBookingDate;
-                if (selectedDate > maxBookingDate) {
-                    selectedDate = maxBookingDate;
-                }
-                dateInput.value = selectedDate;
-            }
-
-            renderCoaches();
-            renderTimeSlots();
-            initLineLIFF();
-
-            // ฟัง Event เมื่อแอดมินสลับเปิด/ปิดโค้ชข้ามแท็บ
-            window.addEventListener('storage', function(e) {
-                settings = safeGetStorage('gallery_settings', settings);
-                renderCoaches();
-                renderTimeSlots();
-            });
-
-            if (useFirebase && db) {
-                db.collection("bookings").onSnapshot((snapshot) => {
-                    const loaded = []; snapshot.forEach(doc => {
-                        const data = doc.data();
-                        loaded.push({ ...data, status: data.status || 'confirmed' });
-                    });
-                    bookings = loaded; safeSetStorage('gallery_bookings', bookings); renderTimeSlots();
-                });
-                db.collection("admin_closed_slots").onSnapshot((snapshot) => {
-                    const loaded = {}; snapshot.forEach(doc => loaded[doc.id] = doc.data());
-                    adminClosedSlots = loaded; safeSetStorage('gallery_admin_closed_slots', adminClosedSlots); renderTimeSlots();
-                });
-                db.collection("coach_availability").onSnapshot((snapshot) => {
-                    const loaded = {}; snapshot.forEach(doc => loaded[doc.id] = doc.data().slots || {});
-                    coachCustomAvailability = loaded; safeSetStorage('gallery_coach_availability', coachCustomAvailability); renderTimeSlots();
-                });
-                db.collection("settings").doc("court_operating_hours").onSnapshot((doc) => {
-                    if (doc.exists) {
-                        courtOperatingHours = doc.data();
-                        safeSetStorage('gallery_court_operating_hours', courtOperatingHours);
-                        renderTimeSlots();
-                    }
-                });
-                db.collection("settings").doc("pricing").onSnapshot((doc) => {
-                    if (doc.exists) {
-                        settings = doc.data();
-                        safeSetStorage('gallery_settings', settings);
-                        renderCoaches();
-                        renderTimeSlots();
-                    }
-                });
-            }
-        };
-
-        function initLineLIFF() {
-            if (typeof liff !== 'undefined') {
-                liff.init({ liffId: "2001234567-AbCdEfGh" }).then(() => {
-                    if (liff.isLoggedIn()) {
-                        liff.getProfile().then(profile => {
-                            lineProfile = profile;
-                            document.getElementById('cust-name').value = profile.displayName;
-                            document.getElementById('line-user-name').innerText = profile.displayName;
-                            document.getElementById('line-user-badge').classList.remove('hidden');
-                        });
-                    }
-                }).catch(err => console.log("LIFF Init Fallback"));
-            }
-        }
 
         function setBookingType(type) {
             bookingType = type;
@@ -654,16 +561,30 @@
             });
 
             if (type === 'court_and_coach') {
-                const activeCoaches = getActiveCoaches();
-                if (!selectedCoach || !activeCoaches.some(c => c.id === selectedCoach.id)) {
-                    selectedCoach = activeCoaches[0] || null;
-                }
-                if (coachSection) coachSection.classList.remove('hidden');
+                const coaches = getActiveCoaches();
+                if (!selectedCoach && coaches.length > 0) selectedCoach = coaches[0];
+                coachSection.classList.remove('hidden');
             } else {
-                selectedCoach = null;
-                if (coachSection) coachSection.classList.add('hidden');
+                coachSection.classList.add('hidden');
             }
 
+            renderCoaches();
+            renderTimeSlots();
+        }
+
+        function setStudentCount(count) {
+            studentCount = count;
+            for (let i = 1; i <= 4; i++) {
+                const btn = document.getElementById(`btn-student-${i}`);
+                if (btn) {
+                    if (i === count) {
+                        btn.className = "py-2.5 rounded-2xl font-bold text-xs sm:text-sm border border-[#B39250] bg-[#1A1A1A] text-white shadow-xs";
+                    } else {
+                        btn.className = "py-2.5 rounded-2xl font-bold text-xs sm:text-sm border border-gray-300 bg-white text-gray-800 hover:border-[#B39250]";
+                    }
+                }
+            }
+            renderCoaches();
             renderTimeSlots();
         }
 
@@ -682,56 +603,55 @@
             renderTimeSlots();
         }
 
+        function onDateChange(val) {
+            const maxAllowedDate = "2026-08-31";
+            if (val > maxAllowedDate) {
+                showToast('ขณะนี้เปิดให้จองล่วงหน้าได้ถึงวันที่ 31 สิงหาคม 2569 เท่านั้น', true);
+                selectedDate = maxAllowedDate;
+                document.getElementById('booking-date').value = maxAllowedDate;
+            } else {
+                selectedDate = val;
+            }
+            renderTimeSlots();
+        }
+
+        function onTimeSlotSelect(val) {
+            selectedTime = val;
+        }
+
         function renderCoaches() {
             const container = document.getElementById('coach-list-container');
             if (!container) return;
             container.innerHTML = '';
-
             const activeCoaches = getActiveCoaches();
-
-            if (activeCoaches.length === 0) {
-                container.innerHTML = `<div class="p-4 bg-rose-50 text-rose-800 rounded-2xl text-center text-xs font-bold border border-rose-200">ขณะนี้ไม่มีโค้ชเปิดให้บริการ</div>`;
-                return;
-            }
-
-            if (selectedCoach && !activeCoaches.some(c => c.id === selectedCoach.id)) {
-                selectedCoach = activeCoaches[0];
-            }
 
             activeCoaches.forEach(coach => {
                 const isSelected = selectedCoach && selectedCoach.id === coach.id;
                 const div = document.createElement('div');
-                div.className = `p-4 rounded-3xl border transition-all cursor-pointer ${isSelected ? 'border-[#B39250] bg-white ring-2 ring-[#B39250] shadow-md' : 'border-gray-200 bg-white hover:border-gray-300'}`;
+                div.className = `p-3.5 rounded-2xl border text-left transition-all cursor-pointer ${isSelected ? 'border-[#B39250] bg-white ring-2 ring-[#B39250] shadow-sm' : 'border-gray-200 bg-white'}`;
                 div.onclick = () => { selectedCoach = coach; renderCoaches(); renderTimeSlots(); };
+                
+                const coachFeeCalc = coach.price * studentCount;
+
                 div.innerHTML = `
-                    <div class="flex gap-3 items-center">
-                        <img src="${coach.avatar}" onerror="this.onerror=null; this.src='https://placehold.co/200x200/1A1A1A/B39250?text=${encodeURIComponent(coach.name)}';" class="w-16 h-16 rounded-full object-cover border-2 border-gray-200 shrink-0" alt="${coach.name}">
-                        <div class="flex-1 min-w-0">
-                            <div class="flex justify-between items-start gap-1">
-                                <div>
-                                    <h4 class="font-bold text-gray-900 text-base leading-snug">${coach.name}</h4>
-                                    <p class="text-xs text-gray-600 flex items-center gap-1 mt-0.5 font-light">🗓️ ${coach.daysText}</p>
+                    <div class="flex justify-between items-center gap-3">
+                        <div class="flex items-center gap-3">
+                            <img src="${coach.avatar || 'coach1.png'}" onerror="this.src='https://placehold.co/100x100/1A1A1A/B39250?text=COACH';" class="w-12 h-12 rounded-full object-cover border border-[#B39250]/40 shrink-0">
+                            <div>
+                                <div class="flex items-center gap-1.5">
+                                    <span class="font-bold text-gray-900 text-sm sm:text-base">${coach.name}</span>
                                 </div>
-                                <span class="font-bold text-emerald-800 text-sm shrink-0">${coach.price} / ชั่วโมง</span>
+                                <p class="text-xs text-emerald-800 font-medium">${coach.daysText || 'สอนตามตาราง'}</p>
+                                <p class="text-[11px] text-gray-500 font-light mt-0.5">${coach.desc || ''}</p>
                             </div>
-                            <p class="text-xs text-gray-500 mt-1 line-clamp-2 font-light">${coach.desc}</p>
-                            <p class="text-[11px] text-gray-700 font-semibold mt-1">👥 ${coach.studentText}</p>
+                        </div>
+                        <div class="text-right shrink-0">
+                            <span class="font-bold text-emerald-700 text-sm sm:text-base block">${coachFeeCalc} ฿/ชม.</span>
+                            <span class="text-[10px] text-gray-400 font-light block">(${coach.price}×${studentCount}คน)</span>
                         </div>
                     </div>`;
                 container.appendChild(div);
             });
-        }
-
-        function onDateChange(val) { 
-            const maxBookingDate = '2026-08-31';
-            if (val > maxBookingDate) {
-                showToast('ขณะนี้เปิดรับจองล่วงหน้าได้ถึงวันที่ 31 สิงหาคม 2569 เท่านั้น', true);
-                document.getElementById('booking-date').value = maxBookingDate;
-                selectedDate = maxBookingDate;
-            } else {
-                selectedDate = val; 
-            }
-            renderTimeSlots(); 
         }
 
         function isCoachSetAvailable(coachId, dateStr, slotStr) {
@@ -739,12 +659,13 @@
             if (coachCustomAvailability[key] && coachCustomAvailability[key][slotStr] !== undefined) {
                 return coachCustomAvailability[key][slotStr];
             }
-            const coachObj = COACHES.find(c => c.id === coachId);
+            const coaches = getActiveCoaches();
+            const coachObj = coaches.find(c => c.id === coachId);
             if (!coachObj) return false;
             const parts = dateStr.split('-');
             const dayOfWeek = new Date(parseInt(parts[0]), parseInt(parts[1])-1, parseInt(parts[2])).getDay();
             if (!coachObj.availableDays.includes(dayOfWeek)) return false;
-            if (coachId === 'coach_to' && dayOfWeek === 5 && parseInt(slotStr.split(':')[0]) < 12) return false;
+            if (coachId === 'coach3' && dayOfWeek === 5 && parseInt(slotStr.split(':')[0]) < 12) return false;
             return true;
         }
 
@@ -783,7 +704,7 @@
                     return { available: false, reason: `ปิดสนาม: ${adminClosedSlots[closureKey].reason}` };
                 }
                 const isCourtBooked = bookings.some(b => {
-                    if (b.date !== selectedDate || b.status === 'rejected') return false;
+                    if (b.date !== selectedDate || b.status === 'cancelled') return false;
                     const bSubSlots = getSubHourlySlots(b.timeSlot);
                     return bSubSlots.includes(subSlot);
                 });
@@ -793,48 +714,51 @@
                 if (bookingType === 'court_and_coach' && selectedCoach) {
                     const isCoachAvail = isCoachSetAvailable(selectedCoach.id, selectedDate, subSlot);
                     const isCoachBooked = bookings.some(b => {
-                        if (b.date !== selectedDate || b.coachId !== selectedCoach.id || b.status === 'rejected') return false;
+                        if (b.date !== selectedDate || b.coachId !== selectedCoach.id || b.status === 'cancelled') return false;
                         const bSubSlots = getSubHourlySlots(b.timeSlot);
                         return bSubSlots.includes(subSlot);
                     });
                     if (!isCoachAvail || isCoachBooked) {
-                        return { available: false, reason: 'โค้ชไม่สะดวก/ติดคิวสอนช่วงเวลานี้' };
+                        return { available: false, reason: 'โค้ชไม่สะดวก/ติดคิว' };
                     }
                 }
             }
             return { available: true };
         }
 
+        // ✅ แก้ไข: ย้ายสถานะ ว่าง/ไม่ว่าง มาอยู่หน้าสุดของข้อความใน Dropdown เรียบร้อย 100%
         function renderTimeSlots() {
             const select = document.getElementById('time-slot-dropdown');
-            const rateLabel = document.getElementById('court-rate-label');
             if (!select) return;
-            
-            const currentCourtRate = getCourtHourlyRate(selectedDate);
-            if (rateLabel) rateLabel.innerText = `อัตราสนาม ${currentCourtRate} ฿/ชม.`;
-
             select.innerHTML = '';
             const availableSlots = getGeneratedTimeSlots(bookingDuration);
+
+            const courtRate = getCourtHourlyRate(selectedDate);
+            const rateLabel = document.getElementById('court-rate-label');
+            if (rateLabel) rateLabel.innerText = `อัตราสนาม ${courtRate} ฿/ชม.`;
+
+            let settings = safeGetStorage('gallery_settings', { rateKnocker: 300, rateBallMachine: 250 });
+            let serviceExtraRate = 0;
+            if (bookingType === 'court_and_knocker') serviceExtraRate = settings.rateKnocker || 300;
+            if (bookingType === 'court_and_ballmachine') serviceExtraRate = settings.rateBallMachine || 250;
 
             availableSlots.forEach(slotStr => {
                 const option = document.createElement('option');
                 option.value = slotStr;
                 const status = checkSlotAvailability(slotStr);
 
-                let extraFeePerHour = 0;
-                if (bookingType === 'court_and_coach' && selectedCoach) extraFeePerHour = selectedCoach.price;
-                else if (bookingType === 'court_and_knocker') extraFeePerHour = settings.rateKnocker || 300;
-                else if (bookingType === 'court_and_ballmachine') extraFeePerHour = settings.rateBallMachine || 250;
+                const coachFeePerHour = (bookingType === 'court_and_coach' && selectedCoach) ? (selectedCoach.price * studentCount) : 0;
+                const hourlyTotalPrice = courtRate + coachFeePerHour + serviceExtraRate;
+                const totalPrice = hourlyTotalPrice * bookingDuration;
 
-                const hourlyPrice = currentCourtRate + extraFeePerHour;
-                const totalPrice = hourlyPrice * bookingDuration;
-
+                // ✅ จัดรูปแบบให้ "🟢 ว่าง" หรือ "🔴 ไม่ว่าง" อยู่ตำแหน่งแรกสุดของข้อความ
                 if (!status.available) {
-                    option.text = `🔴 [${status.reason}] - ${slotStr} (${bookingDuration} ชม.)`;
+                    option.text = `🔴 ไม่ว่าง [${status.reason}] | ${slotStr} น. (${bookingDuration} ชม.)`;
                     option.disabled = true;
                 } else {
-                    option.text = `🟢 ว่าง - ${slotStr} (${bookingDuration} ชม.) - รวม ${totalPrice} บาท`;
+                    option.text = `🟢 ว่าง | ${slotStr} น. (${bookingDuration} ชม.) - รวม ${totalPrice} ฿`;
                 }
+                
                 if (slotStr === selectedTime) option.selected = true;
                 select.appendChild(option);
             });
@@ -850,30 +774,22 @@
             }
         }
 
-        function onTimeSlotSelect(val) { selectedTime = val; }
-
         function goToStep(stepNum) {
             if (stepNum === 2 && !selectedTime) { showToast('ไม่มีช่วงเวลาที่เลือกหรือสนามไม่ว่าง', true); return; }
             
-            const steps = [1, 2, 3, 4];
-            steps.forEach(i => {
-                document.getElementById(`step-${i}-content`)?.classList.add('hidden');
+            // Hide all step containers
+            ['step-1-content', 'step-2-content', 'step-3-content', 'step-4-content', 'step-5-pending', 'step-6-success'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.classList.add('hidden');
             });
-            document.getElementById('step-5-pending')?.classList.add('hidden');
-            document.getElementById('step-6-success')?.classList.add('hidden');
 
-            if (stepNum === 5) {
-                document.getElementById('step-5-pending')?.classList.remove('hidden');
-            } else if (stepNum === 6) {
-                document.getElementById('step-6-success')?.classList.remove('hidden');
-            } else {
-                document.getElementById(`step-${stepNum}-content`)?.classList.remove('hidden');
-            }
+            const targetId = stepNum === 5 ? 'step-5-pending' : (stepNum === 6 ? 'step-6-success' : `step-${stepNum}-content`);
+            document.getElementById(targetId)?.classList.remove('hidden');
 
             for (let i = 1; i <= 4; i++) {
                 const el = document.getElementById(`p-step-${i}`);
                 if (el) {
-                    if (i <= (stepNum > 4 ? 4 : stepNum)) {
+                    if (i <= Math.min(stepNum, 4)) {
                         el.className = "flex items-center gap-1.5 text-[#D4AF37] font-bold";
                         el.querySelector('span').className = "w-5 h-5 rounded-full flex items-center justify-center text-xs bg-[#B39250] text-black font-bold";
                     } else {
@@ -882,7 +798,6 @@
                     }
                 }
             }
-
             if (stepNum === 3) renderReviewSummary();
             if (stepNum === 4) startPaymentTimer();
             if (stepNum !== 4) stopPaymentTimer();
@@ -923,23 +838,26 @@
         function renderReviewSummary() {
             const custName = document.getElementById('cust-name').value.trim() || 'คุณลูกค้า';
             const custPhone = document.getElementById('cust-phone').value.trim() || '08X-XXX-XXXX';
-            
-            const currentCourtRate = getCourtHourlyRate(selectedDate);
-            let extraFeePerHour = 0;
-            if (bookingType === 'court_and_coach' && selectedCoach) extraFeePerHour = selectedCoach.price;
-            else if (bookingType === 'court_and_knocker') extraFeePerHour = settings.rateKnocker || 300;
-            else if (bookingType === 'court_and_ballmachine') extraFeePerHour = settings.rateBallMachine || 250;
+            const courtRate = getCourtHourlyRate(selectedDate);
 
-            const courtFeeTotal = currentCourtRate * bookingDuration;
-            const extraFeeTotal = extraFeePerHour * bookingDuration;
-            const totalPrice = courtFeeTotal + extraFeeTotal;
+            let settings = safeGetStorage('gallery_settings', { rateKnocker: 300, rateBallMachine: 250 });
+            let serviceExtraRate = 0;
+            if (bookingType === 'court_and_knocker') serviceExtraRate = settings.rateKnocker || 300;
+            if (bookingType === 'court_and_ballmachine') serviceExtraRate = settings.rateBallMachine || 250;
+
+            const coachFeePerHour = (bookingType === 'court_and_coach' && selectedCoach) ? (selectedCoach.price * studentCount) : 0;
+            const hourlyTotalPrice = courtRate + coachFeePerHour + serviceExtraRate;
+            const totalPrice = hourlyTotalPrice * bookingDuration;
 
             document.getElementById('summary-booking-type').innerText = getBookingTypeLabel(bookingType);
-            const coachRow = document.getElementById('summary-coach-row');
+            const coachRow = document.getElementById('summary-[#m-coach-row]');
+            const coachRowElem = document.getElementById('summary-coach-row');
             if (bookingType === 'court_and_coach' && selectedCoach) {
-                coachRow.classList.remove('hidden');
-                document.getElementById('summary-coach-name').innerText = `${selectedCoach.name} (+${selectedCoach.price}/ชั่วโมง)`;
-            } else { coachRow.classList.add('hidden'); }
+                if (coachRowElem) coachRowElem.classList.remove('hidden');
+                document.getElementById('summary-coach-name').innerText = `${selectedCoach.name} (${selectedCoach.price}฿ × ${studentCount}คน = ${coachFeePerHour}฿/ชม.)`;
+            } else { 
+                if (coachRowElem) coachRowElem.classList.add('hidden'); 
+            }
 
             document.getElementById('summary-date').innerText = formatDateThai(selectedDate);
             document.getElementById('summary-time').innerText = `${selectedTime} น. (${bookingDuration} ชั่วโมง)`;
@@ -953,41 +871,40 @@
             if (!file) return;
 
             const reader = new FileReader();
-            reader.onload = function(evt) {
+            reader.onload = function(event) {
                 const img = new Image();
                 img.onload = function() {
                     const canvas = document.createElement('canvas');
-                    const MAX_WIDTH = 600;
-                    const MAX_HEIGHT = 800;
                     let width = img.width;
                     let height = img.height;
-
-                    if (width > height) {
-                        if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; }
-                    } else {
-                        if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; }
+                    const maxW = 800;
+                    if (width > maxW) {
+                        height = Math.round((height * maxW) / width);
+                        width = maxW;
                     }
-
                     canvas.width = width;
                     canvas.height = height;
                     const ctx = canvas.getContext('2d');
                     ctx.drawImage(img, 0, 0, width, height);
+                    pendingSlipBase64 = canvas.toDataURL('image/jpeg', 0.75);
 
-                    uploadedSlipBase64 = canvas.toDataURL('image/jpeg', 0.6); // Compressed ~40KB
-                    const imgEl = document.getElementById('slip-preview-img');
-                    const container = document.getElementById('slip-preview-container');
-                    if (imgEl && container) {
-                        imgEl.src = uploadedSlipBase64;
-                        container.classList.remove('hidden');
+                    const previewImg = document.getElementById('slip-preview-img');
+                    const previewContainer = document.getElementById('slip-preview-container');
+                    if (previewImg && previewContainer) {
+                        previewImg.src = pendingSlipBase64;
+                        previewContainer.classList.remove('hidden');
                     }
                 };
-                img.src = evt.target.result;
+                img.src = event.target.result;
             };
             reader.readAsDataURL(file);
         }
 
-        async function submitPendingPayment() {
-            const finalSlipUrl = uploadedSlipBase64 || 'https://placehold.co/400x500/1A1A1A/B39250?text=NO+SLIP+ATTACHED';
+        function submitPendingPayment() {
+            if (!pendingSlipBase64) {
+                showToast('กรุณาแนบรูปสลิปหลักฐานการโอนเงินก่อนส่งแจ้งชำระ', true);
+                return;
+            }
 
             stopPaymentTimer();
             const custName = document.getElementById('cust-name').value.trim() || 'คุณลูกค้า';
@@ -996,46 +913,30 @@
             const custNote = document.getElementById('cust-note').value.trim();
 
             const bookingId = 'GLY-' + Math.floor(100000 + Math.random() * 900000);
-            currentActiveBookingId = bookingId;
-
             const courtRate = getCourtHourlyRate(selectedDate);
-            let extraFeePerHour = 0;
-            if (bookingType === 'court_and_coach' && selectedCoach) extraFeePerHour = selectedCoach.price;
-            else if (bookingType === 'court_and_knocker') extraFeePerHour = settings.rateKnocker || 300;
-            else if (bookingType === 'court_and_ballmachine') extraFeePerHour = settings.rateBallMachine || 250;
 
-            const courtFeeTotal = courtRate * bookingDuration;
-            const extraFeeTotal = extraFeePerHour * bookingDuration;
-            const totalPrice = courtFeeTotal + extraFeeTotal;
+            let settings = safeGetStorage('gallery_settings', { rateKnocker: 300, rateBallMachine: 250 });
+            let serviceExtraRate = 0;
+            if (bookingType === 'court_and_knocker') serviceExtraRate = settings.rateKnocker || 300;
+            if (bookingType === 'court_and_ballmachine') serviceExtraRate = settings.rateBallMachine || 250;
 
-            let driveFileUrl = '';
-            if (GOOGLE_DRIVE_SCRIPT_URL && uploadedSlipBase64) {
-                try {
-                    const response = await fetch(GOOGLE_DRIVE_SCRIPT_URL, {
-                        method: 'POST',
-                        body: JSON.stringify({
-                            bookingId: bookingId,
-                            customerName: custName,
-                            base64Image: uploadedSlipBase64
-                        })
-                    });
-                    const resData = await response.json();
-                    if (resData && resData.url) driveFileUrl = resData.url;
-                } catch (err) {
-                    console.log("Google Drive upload fallback to direct storage");
-                }
-            }
+            const coachFeePerHour = (bookingType === 'court_and_coach' && selectedCoach) ? (selectedCoach.price * studentCount) : 0;
+            const courtFeeTotal = (courtRate + serviceExtraRate) * bookingDuration;
+            const coachFeeTotal = coachFeePerHour * bookingDuration;
+            const totalPrice = courtFeeTotal + coachFeeTotal;
 
-            const newBooking = {
+            const pendingBooking = {
                 bookingId: bookingId,
+                status: 'pending',
                 bookingType: bookingType,
                 bookingDuration: bookingDuration,
+                studentCount: studentCount,
                 courtId: SINGLE_COURT.id,
                 courtName: SINGLE_COURT.name,
                 courtPrice: courtFeeTotal,
                 coachId: selectedCoach ? selectedCoach.id : null,
                 coachName: selectedCoach ? selectedCoach.name : null,
-                coachPrice: extraFeeTotal,
+                coachPrice: coachFeeTotal,
                 totalPrice: totalPrice,
                 date: selectedDate,
                 timeSlot: selectedTime,
@@ -1043,74 +944,96 @@
                 customerPhone: custPhone,
                 customerSkill: custSkill,
                 customerNote: custNote,
-                lineUserId: lineProfile.userId || '',
-                slipUrl: finalSlipUrl,
-                driveSlipUrl: driveFileUrl,
-                status: 'pending',
-                createdAt: new Date().toISOString()
+                slipImage: pendingSlipBase64,
+                createdAt: new Date().toISOString(),
+                lineUserId: lineProfile.userId || ''
             };
 
-            bookings.push(newBooking);
+            bookings.push(pendingBooking);
             safeSetStorage('gallery_bookings', bookings);
 
-            try { window.dispatchEvent(new Event('storage')); } catch(e) {}
-
             if (useFirebase && db) {
-                db.collection("bookings").doc(bookingId).set(newBooking);
-                
-                if (activeDocUnsubscribe) activeDocUnsubscribe();
-                activeDocUnsubscribe = db.collection("bookings").doc(bookingId).onSnapshot((docSnap) => {
-                    if (docSnap.exists) {
-                        const data = docSnap.data();
-                        if (data.status === 'confirmed') {
-                            showConfirmedSuccessScreen(data);
-                        } else if (data.status === 'rejected') {
-                            showToast('รายการถูกปฏิเสธ / สลิปไม่ถูกต้อง กรุณาติดต่อแอดมิน', true);
-                            resetBooking();
-                        }
-                    }
-                });
+                db.collection("bookings").doc(bookingId).set(pendingBooking);
             }
 
             document.getElementById('p-booking-id').innerText = bookingId;
             document.getElementById('p-datetime').innerText = `${formatDateThai(selectedDate)} (${selectedTime} น.)`;
             document.getElementById('p-total').innerText = `${totalPrice} ฿`;
 
-            renderTimeSlots();
             goToStep(5);
-            showToast('แจ้งชำระเงินสำเร็จ! ข้อมูลถูกส่งไปที่แอดมินเรียบร้อยแล้ว');
-        }
-
-        function showConfirmedSuccessScreen(data) {
-            document.getElementById('success-booking-id').innerText = data.bookingId;
-            document.getElementById('success-type-desc').innerText = `${getBookingTypeLabel(data.bookingType)} (${data.bookingDuration || 1} ชม.)`;
-            document.getElementById('s-cust').innerText = `${data.bookedBy} (${data.customerPhone})`;
-            document.getElementById('s-court').innerText = SINGLE_COURT.name;
-            
-            const coachRow = document.getElementById('s-coach-row');
-            if (data.coachName) {
-                coachRow.classList.remove('hidden');
-                document.getElementById('s-coach').innerText = data.coachName;
-            } else {
-                coachRow.classList.add('hidden');
-            }
-
-            document.getElementById('s-datetime').innerText = `${formatDateThai(data.date)} (${data.timeSlot} น.)`;
-            document.getElementById('s-total').innerText = `${data.totalPrice} ฿`;
-
-            goToStep(6);
-            showToast('แอดมินอนุมัติการชำระเงินเรียบร้อยแล้ว!');
+            showToast('แจ้งชำระเงินเรียบร้อยแล้ว กำลังรอแอดมินอนุมัติสลิป');
         }
 
         function resetBooking() {
             stopPaymentTimer();
-            if (activeDocUnsubscribe) { activeDocUnsubscribe(); activeDocUnsubscribe = null; }
-            currentActiveBookingId = null;
-            uploadedSlipBase64 = '';
-            const slipInput = document.getElementById('slip-file-input');
-            if (slipInput) slipInput.value = '';
-            document.getElementById('slip-preview-container')?.classList.add('hidden');
+            pendingSlipBase64 = null;
+            const previewContainer = document.getElementById('slip-preview-container');
+            if (previewContainer) previewContainer.classList.add('hidden');
             goToStep(1);
+        }
+
+        // --- 3. APP INITIALIZATION & STORAGE LISTENERS ---
+        window.onload = function() {
+            const dateInput = document.getElementById('booking-date');
+            if (dateInput) {
+                dateInput.value = selectedDate;
+                dateInput.min = getTodayStr();
+                dateInput.max = "2026-08-31";
+            }
+
+            setBookingType('court_only');
+            setStudentCount(1);
+            setBookingDuration(1);
+            initLineLIFF();
+
+            if (useFirebase && db) {
+                db.collection("bookings").onSnapshot((snapshot) => {
+                    const loaded = []; 
+                    snapshot.forEach(doc => {
+                        const data = doc.data();
+                        loaded.push({ ...data, status: data.status || 'confirmed' });
+                    });
+                    bookings = loaded; safeSetStorage('gallery_bookings', bookings); renderTimeSlots();
+                });
+                db.collection("admin_closed_slots").onSnapshot((snapshot) => {
+                    const loaded = {}; snapshot.forEach(doc => loaded[doc.id] = doc.data());
+                    adminClosedSlots = loaded; safeSetStorage('gallery_admin_closed_slots', adminClosedSlots); renderTimeSlots();
+                });
+                db.collection("coach_availability").onSnapshot((snapshot) => {
+                    const loaded = {}; snapshot.forEach(doc => loaded[doc.id] = doc.data().slots || {});
+                    coachCustomAvailability = loaded; safeSetStorage('gallery_coach_availability', coachCustomAvailability); renderTimeSlots();
+                });
+                db.collection("settings").doc("court_operating_hours").onSnapshot((doc) => {
+                    if (doc.exists) {
+                        courtOperatingHours = doc.data();
+                        safeSetStorage('gallery_court_operating_hours', courtOperatingHours);
+                        renderTimeSlots();
+                    }
+                });
+            }
+
+            // Sync settings changes dynamically from admin portal
+            window.addEventListener('storage', function(e) {
+                if (e.key === 'gallery_settings' || e.key === 'gallery_court_operating_hours') {
+                    renderCoaches();
+                    renderTimeSlots();
+                }
+            });
+        };
+
+        function initLineLIFF() {
+            if (typeof liff !== 'undefined') {
+                liff.init({ liffId: "2001234567-AbCdEfGh" }).then(() => {
+                    if (liff.isLoggedIn()) {
+                        liff.getProfile().then(profile => {
+                            lineProfile = profile;
+                            if (document.getElementById('cust-name')) document.getElementById('cust-name').value = profile.displayName;
+                            if (document.getElementById('line-user-name')) document.getElementById('line-user-name').innerText = profile.displayName;
+                            if (document.getElementById('line-user-badge')) document.getElementById('line-user-badge').classList.remove('hidden');
+                        });
+                    }
+                }).catch(err => console.log("LIFF Init Fallback"));
+            }
         }
     </script>
 </body>

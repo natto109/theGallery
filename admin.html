@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>The Gallery Tennis House - Backend Portal</title>
+    <title>The Gallery Tennis House - Backend Portal (Admin & Coach)</title>
 
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -19,6 +19,9 @@
 
     <!-- External Firebase Config -->
     <script src="firebase-config.js"></script>
+
+    <!-- Centralized Coaches Config -->
+    <script src="coaches.js"></script>
 
     <style>
         body {
@@ -167,7 +170,7 @@
 
                         <!-- Coaches Price & Status Toggle -->
                         <div class="bg-emerald-50/50 p-4 rounded-2xl border border-emerald-200 space-y-3 text-xs sm:text-sm">
-                            <h5 class="font-bold text-emerald-950 text-sm">👨‍🏫 จัดการสถานะโค้ช และค่าสอน (บาท/ชม.)</h5>
+                            <h5 class="font-bold text-emerald-950 text-sm">👨‍🏫 จัดการสถานะโค้ช และค่าสอน (บาท/ชม./คน)</h5>
                             <div id="coach-settings-list" class="space-y-2.5">
                                 <!-- Coach controls rendered dynamically -->
                             </div>
@@ -416,6 +419,47 @@
         </div>
     </div>
 
+    <!-- DELETE CONFIRMATION MODAL -->
+    <div id="delete-modal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-md rounded-3xl p-5 sm:p-6 shadow-2xl space-y-4 border border-rose-300">
+            <div class="flex justify-between items-center border-b border-gray-200 pb-3">
+                <div class="flex items-center gap-2">
+                    <span class="text-2xl">🗑️</span>
+                    <div>
+                        <h3 class="font-bold text-base sm:text-lg text-rose-700">ยืนยันการยกเลิก/ลบรายการจอง</h3>
+                        <p class="text-xs text-gray-500 font-mono" id="del-booking-id">GLY-XXXXXX</p>
+                    </div>
+                </div>
+                <button onclick="closeDeleteModal()" class="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 font-bold text-gray-600">✕</button>
+            </div>
+
+            <!-- DETAILS SUMMARY -->
+            <div class="bg-rose-50 p-4 rounded-2xl border border-rose-200 text-xs sm:text-sm space-y-2">
+                <p class="font-bold text-rose-950">⚠️ คำเตือน: การลบรายการนี้จะยกเลิกคิว และส่งข้อความแจ้งเตือนไปยัง LINE OA</p>
+                <div class="border-t border-rose-200/60 pt-2 space-y-1 text-gray-800 font-light">
+                    <p><strong>ผู้จอง:</strong> <span id="del-cust-name" class="font-bold">-</span></p>
+                    <p><strong>วัน/เวลา:</strong> <span id="del-datetime" class="font-bold">-</span></p>
+                    <p><strong>ประเภท:</strong> <span id="del-type" class="font-bold">-</span></p>
+                    <p><strong>ยอดเงิน:</strong> <span id="del-price" class="font-bold text-emerald-800">-</span></p>
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold text-gray-700 mb-1">เหตุผลในการยกเลิก/ลบ (จะส่งแจ้งเตือนเข้า LINE OA):</label>
+                <input type="text" id="del-reason-input" value="จองผิดพลาด / ลูกค้าขอยกเลิก" placeholder="ระบุเหตุผลในการลบ" class="w-full p-3 bg-gray-50 border border-gray-300 rounded-xl text-xs sm:text-sm outline-none focus:border-rose-500 font-light">
+            </div>
+
+            <div class="grid grid-cols-2 gap-3 pt-1">
+                <button onclick="closeDeleteModal()" class="py-3 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-2xl font-bold text-xs sm:text-sm transition-all">
+                    ยกเลิก (Cancel)
+                </button>
+                <button id="btn-confirm-delete" onclick="executeDeleteBooking()" class="py-3 bg-rose-600 hover:bg-rose-700 text-white rounded-2xl font-bold text-xs sm:text-sm transition-all shadow">
+                    🗑️ ยืนยันลบคิว
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Toast Notification -->
     <div id="toast-bg" class="hidden fixed top-5 left-1/2 transform -translate-x-1/2 z-50 flex items-center gap-2.5 bg-[#1A1A1A] text-white px-6 py-3.5 rounded-full shadow-2xl border border-[#B39250] text-xs sm:text-sm font-medium">
         <span id="toast-dot" class="w-3 h-3 rounded-full bg-emerald-500"></span>
@@ -453,9 +497,11 @@
             return `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear() + 543}`;
         }
 
-        function getBookingTypeDesc(type) {
+        function getBookingTypeDesc(b) {
+            const type = typeof b === 'string' ? b : (b?.bookingType || '');
+            const studentText = (typeof b === 'object' && b?.studentCount > 1) ? ` (${b.studentCount} คน)` : '';
             switch(type) {
-                case 'court_and_coach': return 'เรียนกับโค้ช';
+                case 'court_and_coach': return 'เรียนกับโค้ช' + studentText;
                 case 'court_and_knocker': return 'น็อคเกอร์';
                 case 'court_and_ballmachine': return 'เครื่องยิงบอล';
                 default: return 'เช่าสนามอย่างเดียว';
@@ -487,7 +533,7 @@
                 return;
             }
 
-            const headers = ["Booking ID", "Status", "Date", "Time Slot", "Duration (Hrs)", "Customer Name", "Phone", "Skill Level", "Note", "Booking Type", "Coach Name", "Court Price (THB)", "Coach Price (THB)", "Total Price (THB)", "Created At"];
+            const headers = ["Booking ID", "Status", "Date", "Time Slot", "Duration (Hrs)", "Students", "Customer Name", "Phone", "Skill Level", "Note", "Booking Type", "Coach Name", "Court Price (THB)", "Coach Price (THB)", "Total Price (THB)", "Created At"];
             
             let csvContent = "\uFEFF"; // UTF-8 BOM for Excel Thai language support
             csvContent += headers.map(h => `"${h}"`).join(",") + "\n";
@@ -499,11 +545,12 @@
                     b.date || '',
                     b.timeSlot || '',
                     b.bookingDuration || 1,
+                    b.studentCount || 1,
                     b.bookedBy || '',
                     b.customerPhone || '',
                     b.customerSkill || '',
                     b.customerNote || '',
-                    getBookingTypeDesc(b.bookingType),
+                    getBookingTypeDesc(b),
                     b.coachName || '-',
                     b.courtPrice || 0,
                     b.coachPrice || 0,
@@ -571,10 +618,10 @@
         }
 
         // --- 2. GLOBAL STATE VARIABLES & MIGRATION ---
-        let userRole = null;
-        let activeCoachViewTab = 'coach_gun';
-        let coachScheduleDate = new Date().toISOString().split('T')[0];
-        let adminCloseDate = new Date().toISOString().split('T')[0];
+        let userRole = safeGetStorage('gallery_admin_session', {}).role || null;
+        let activeCoachViewTab = 'coach1';
+        let coachScheduleDate = getTodayStr();
+        let adminCloseDate = getTodayStr();
         let weeklyStartMondayStr = getMondayDateStr(new Date());
 
         let rawBookings = safeGetStorage('gallery_bookings', []);
@@ -584,16 +631,21 @@
         let coachCustomAvailability = safeGetStorage('gallery_coach_availability', {});
         let courtOperatingHours = safeGetStorage('gallery_court_operating_hours', { startHour: 6, endHour: 22 });
 
+        // โหลดข้อมูลโค้ชเริ่มต้นจากไฟล์ coaches.js (ลบ title ออกแล้ว)
+        const defaultCoachesList = (typeof window.COACHES_DATA !== 'undefined' && window.COACHES_DATA.length > 0)
+            ? window.COACHES_DATA
+            : [
+                { id: 'coach1', name: 'Coach Gun', price: 1700, active: true, availableDays: [0,1,2,3,4,5,6], avatar: 'coach1.png', daysText: 'สอนทุกวัน จันทร์ - อาทิตย์', desc: 'สอนทุกระดับ ตั้งแต่พื้นฐานถึงระดับสูง', studentText: 'รับนักเรียน : เดี่ยว / กลุ่ม (1-4 คน)' },
+                { id: 'coach2', name: 'Coach Nok', price: 800, active: true, availableDays: [2,3,4], avatar: 'coach2.png', daysText: 'สอนวัน อังคาร - พุธ - พฤหัสบดี', desc: 'สอนทุกระดับ ตั้งแต่พื้นฐานถึงระดับสูง', studentText: 'รับนักเรียน : เดี่ยว / กลุ่ม (1-4 คน)' },
+                { id: 'coach3', name: 'Coach To', price: 600, active: true, availableDays: [5,6,0], avatar: 'coach3.png', daysText: 'สอนวัน ศุกร์ - เสาร์ - อาทิตย์', desc: 'สอนทุกระดับ ตั้งแต่พื้นฐานถึงระดับสูง', studentText: 'รับนักเรียน : เดี่ยว / กลุ่ม (1-5 คน)' }
+            ];
+
         let settings = safeGetStorage('gallery_settings', {
             rateWeekday: 400,
             rateWeekend: 500,
             rateKnocker: 300,
             rateBallMachine: 250,
-            coaches: [
-                { id: 'coach_gun', name: 'Coach Gun', title: 'PREMIUM COACH', price: 1700, active: true, availableDays: [0,1,2,3,4,5,6], avatar: 'coach1.png', daysText: 'สอนทุกวัน จันทร์ - อาทิตย์', desc: 'สอนทุกระดับ ตั้งแต่พื้นฐานถึงระดับสูง', studentText: 'รับนักเรียน : เดี่ยว / กลุ่ม (1-4 คน)' },
-                { id: 'coach_nok', name: 'Coach Nok', title: 'PROFESSIONAL COACH', price: 800, active: true, availableDays: [2,3,4], avatar: 'coach2.png', daysText: 'สอนวัน อังคาร - พุธ - พฤหัสบดี', desc: 'สอนทุกระดับ ตั้งแต่พื้นฐานถึงระดับสูง', studentText: 'รับนักเรียน : เดี่ยว / กลุ่ม (1-4 คน)' },
-                { id: 'coach_to', name: 'Coach To', title: 'ASSISTANT COACH', price: 600, active: true, availableDays: [5,6,0], avatar: 'coach3.png', daysText: 'สอนวัน ศุกร์ - เสาร์ - อาทิตย์', desc: 'สอนทุกระดับ ตั้งแต่พื้นฐานถึงระดับสูง', studentText: 'รับนักเรียน : เดี่ยว / กลุ่ม (1-5 คน)' }
-            ]
+            coaches: defaultCoachesList
         });
 
         const firebaseConfig = window.firebaseConfig || { apiKey: "YOUR_API_KEY" };
@@ -608,6 +660,171 @@
             }
         } catch (e) {}
 
+        let itemToDeleteId = null;
+
+        function initSession() {
+            const sess = safeGetStorage('gallery_admin_session', {});
+            userRole = sess.role || null;
+            if (userRole && sess.loggedIn) {
+                document.getElementById('login-overlay').classList.add('hidden');
+                document.getElementById('dashboard-app').classList.remove('hidden');
+
+                document.getElementById('admin-close-date').value = adminCloseDate;
+                document.getElementById('coach-schedule-date').value = coachScheduleDate;
+
+                if (document.getElementById('cfg-rate-weekday')) document.getElementById('cfg-rate-weekday').value = settings.rateWeekday || 400;
+                if (document.getElementById('cfg-rate-weekend')) document.getElementById('cfg-rate-weekend').value = settings.rateWeekend || 500;
+                if (document.getElementById('cfg-rate-knocker')) document.getElementById('cfg-rate-knocker').value = settings.rateKnocker || 300;
+                if (document.getElementById('cfg-rate-ballmachine')) document.getElementById('cfg-rate-ballmachine').value = settings.rateBallMachine || 250;
+
+                renderCoachSettingsControls();
+
+                if (userRole === 'coach') {
+                    switchTab('coach');
+                    document.getElementById('btn-tab-admin')?.classList.add('hidden');
+                    document.getElementById('btn-tab-weekly')?.classList.add('hidden');
+                } else {
+                    switchTab('admin');
+                    document.getElementById('btn-tab-admin')?.classList.remove('hidden');
+                    document.getElementById('btn-tab-weekly')?.classList.remove('hidden');
+                }
+
+                renderAdminDashboard();
+                renderCoachView();
+                renderWeeklyDashboard();
+            } else {
+                document.getElementById('login-overlay').classList.remove('hidden');
+                document.getElementById('dashboard-app').classList.add('hidden');
+            }
+        }
+
+        function handleLogin(e) {
+            e.preventDefault();
+            const u = document.getElementById('login-username').value.trim();
+            const p = document.getElementById('login-password').value.trim();
+
+            if ((u === 'admin' && p === 'admin123') || p === 'admin123') {
+                userRole = 'admin';
+            } else if ((u === 'coach' && p === 'coach123') || p === 'coach123') {
+                userRole = 'coach';
+            } else {
+                showToast('ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง!', true);
+                return;
+            }
+
+            safeSetStorage('gallery_admin_session', { role: userRole, loggedIn: true });
+            initSession();
+            showToast(`ยินดีต้อนรับเข้าสู่ระบบ (${userRole.toUpperCase()})`);
+        }
+
+        function handleLogout() {
+            userRole = null;
+            safeSetStorage('gallery_admin_session', { role: null, loggedIn: false });
+            document.getElementById('dashboard-app').classList.add('hidden');
+            document.getElementById('login-overlay').classList.remove('hidden');
+            document.getElementById('login-username').value = '';
+            document.getElementById('login-password').value = '';
+        }
+
+        function switchTab(tabName) {
+            const vAdmin = document.getElementById('view-admin');
+            const vCoach = document.getElementById('view-coach');
+            const vWeekly = document.getElementById('view-weekly');
+            const btnAdmin = document.getElementById('btn-tab-admin');
+            const btnCoach = document.getElementById('btn-tab-coach');
+            const btnWeekly = document.getElementById('btn-tab-weekly');
+
+            vAdmin.classList.add('hidden');
+            vCoach.classList.add('hidden');
+            vWeekly.classList.add('hidden');
+
+            btnAdmin.className = "px-3.5 sm:px-4 py-2 sm:py-2.5 font-bold rounded-lg transition-all text-gray-400 hover:text-white";
+            btnCoach.className = "px-3.5 sm:px-4 py-2 sm:py-2.5 font-bold rounded-lg transition-all text-gray-400 hover:text-white";
+            btnWeekly.className = "px-3.5 sm:px-4 py-2 sm:py-2.5 font-bold rounded-lg transition-all text-gray-400 hover:text-white";
+
+            if (tabName === 'admin') {
+                vAdmin.classList.remove('hidden');
+                btnAdmin.className = "px-3.5 sm:px-4 py-2 sm:py-2.5 font-bold rounded-lg transition-all bg-[#B39250] text-[#1A1A1A]";
+                renderAdminDashboard();
+            } else if (tabName === 'coach') {
+                vCoach.classList.remove('hidden');
+                btnCoach.className = "px-3.5 sm:px-4 py-2 sm:py-2.5 font-bold rounded-lg transition-all bg-[#B39250] text-[#1A1A1A]";
+                renderCoachView();
+            } else if (tabName === 'weekly') {
+                vWeekly.classList.remove('hidden');
+                btnWeekly.className = "px-3.5 sm:px-4 py-2 sm:py-2.5 font-bold rounded-lg transition-all bg-[#B39250] text-[#1A1A1A]";
+                renderWeeklyDashboard();
+            }
+        }
+
+        function renderCoachSettingsControls() {
+            const container = document.getElementById('coach-settings-list');
+            if (!container) return;
+            container.innerHTML = '';
+
+            const centralCoaches = (typeof window.COACHES_DATA !== 'undefined' && window.COACHES_DATA.length > 0)
+                ? window.COACHES_DATA
+                : defaultCoachesList;
+
+            settings.coaches = centralCoaches.map(dc => {
+                const existing = settings.coaches ? settings.coaches.find(sc => sc.id === dc.id || sc.name === dc.name) : null;
+                return existing ? { ...dc, price: existing.price, active: existing.active } : dc;
+            });
+
+            settings.coaches.forEach(coach => {
+                const div = document.createElement('div');
+                div.className = "flex items-center justify-between gap-2 p-2.5 bg-white border border-gray-200 rounded-xl";
+                div.innerHTML = `
+                    <div class="flex items-center gap-2">
+                        <img src="${coach.avatar || 'coach1.png'}" onerror="this.src='https://placehold.co/100x100/1A1A1A/B39250?text=COACH';" class="w-8 h-8 rounded-full object-cover shrink-0 border">
+                        <div>
+                            <p class="font-bold text-gray-900">${coach.name}</p>
+                            <p class="text-[10px] text-gray-500">${coach.daysText || 'สอนตามตาราง'}</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <input type="number" id="coach-price-${coach.id}" value="${coach.price}" class="w-20 p-1.5 border border-gray-300 rounded-lg text-right font-bold text-xs outline-none">
+                        <button onclick="toggleCoachActive('${coach.id}')" class="px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all ${coach.active !== false ? 'bg-emerald-600 text-white' : 'bg-gray-300 text-gray-700'}">
+                            ${coach.active !== false ? '🟢 เปิดใช้งาน' : '🔴 ปิดใช้งาน'}
+                        </button>
+                    </div>`;
+                container.appendChild(div);
+            });
+        }
+
+        function toggleCoachActive(coachId) {
+            const c = settings.coaches.find(x => x.id === coachId);
+            if (c) {
+                c.active = (c.active === false) ? true : false;
+                safeSetStorage('gallery_settings', settings);
+                renderCoachSettingsControls();
+                showToast(`อัปเดตสถานะของ ${c.name} เป็น ${c.active ? 'เปิดใช้งาน' : 'ปิดใช้งาน'} เรียบร้อย`);
+            }
+        }
+
+        function savePricingSettings() {
+            const wRate = parseInt(document.getElementById('cfg-rate-weekday').value) || 400;
+            const wkRate = parseInt(document.getElementById('cfg-rate-weekend').value) || 500;
+            const knRate = parseInt(document.getElementById('cfg-rate-knocker').value) || 300;
+            const bmRate = parseInt(document.getElementById('cfg-rate-ballmachine').value) || 250;
+
+            settings.rateWeekday = wRate;
+            settings.rateWeekend = wkRate;
+            settings.rateKnocker = knRate;
+            settings.rateBallMachine = bmRate;
+
+            settings.coaches.forEach(c => {
+                const pInput = document.getElementById(`coach-price-${c.id}`);
+                if (pInput) c.price = parseInt(pInput.value) || c.price;
+            });
+
+            safeSetStorage('gallery_settings', settings);
+            if (useFirebase && db) {
+                db.collection("settings").doc("pricing").set(settings);
+            }
+            showToast('บันทึกอัตราค่าบริการและข้อมูลโค้ชเรียบร้อย');
+        }
+
         function getGeneratedHourlySlots() {
             const slots = [];
             const start = courtOperatingHours.startHour || 6;
@@ -619,378 +836,6 @@
             }
             return slots;
         }
-
-        // --- STREAMING_CHUNK:Writing authentication and tab navigation logic... ---
-        // --- 3. AUTH & NAVIGATION ---
-        let firebaseListenersInitialized = false;
-
-        function initFirebaseListeners() {
-            if (firebaseListenersInitialized) return;
-            firebaseListenersInitialized = true;
-
-            if (useFirebase && db) {
-                db.collection("bookings").onSnapshot((snapshot) => {
-                    const loaded = []; snapshot.forEach(doc => {
-                        const data = doc.data();
-                        loaded.push({ ...data, status: data.status || 'confirmed' });
-                    });
-                    bookings = loaded; safeSetStorage('gallery_bookings', bookings); renderAdminDashboard(); renderCoachView(); renderWeeklyDashboard();
-                });
-                db.collection("admin_closed_slots").onSnapshot((snapshot) => {
-                    const loaded = {}; snapshot.forEach(doc => loaded[doc.id] = doc.data());
-                    adminClosedSlots = loaded; safeSetStorage('gallery_admin_closed_slots', adminClosedSlots); renderAdminCourtClosure(); renderWeeklyDashboard();
-                });
-                db.collection("coach_availability").onSnapshot((snapshot) => {
-                    const loaded = {}; snapshot.forEach(doc => loaded[doc.id] = doc.data().slots || {});
-                    coachCustomAvailability = loaded; safeSetStorage('gallery_coach_availability', coachCustomAvailability); renderCoachView(); renderWeeklyDashboard();
-                });
-                db.collection("settings").doc("pricing").onSnapshot((doc) => {
-                    if (doc.exists) {
-                        settings = doc.data();
-                        safeSetStorage('gallery_settings', settings);
-                        loadPricingToInputs();
-                        renderCoachTabButtons();
-                        renderCoachView();
-                    }
-                });
-            }
-        }
-
-        function checkSessionOnLoad() {
-            const savedRole = safeGetStorage('gallery_session_role', null);
-            if (savedRole === 'admin' || savedRole === 'coach') {
-                userRole = savedRole;
-                document.getElementById('login-overlay')?.classList.add('hidden');
-                document.getElementById('dashboard-app')?.classList.remove('hidden');
-
-                document.getElementById('admin-close-date').value = adminCloseDate;
-                document.getElementById('coach-schedule-date').value = coachScheduleDate;
-
-                loadPricingToInputs();
-
-                if (document.getElementById('operating-open-time')) {
-                    document.getElementById('operating-open-time').value = courtOperatingHours.startHour || 6;
-                }
-                if (document.getElementById('operating-close-time')) {
-                    document.getElementById('operating-close-time').value = courtOperatingHours.endHour || 22;
-                }
-
-                if (userRole === 'coach') {
-                    switchTab('coach');
-                    document.getElementById('btn-tab-admin')?.classList.add('hidden');
-                } else {
-                    switchTab('admin');
-                    document.getElementById('btn-tab-admin')?.classList.remove('hidden');
-                }
-
-                renderAdminDashboard();
-                renderCoachView();
-                renderWeeklyDashboard();
-
-                initFirebaseListeners();
-            }
-        }
-
-        function handleLogin(e) {
-            e.preventDefault();
-            const u = document.getElementById('login-username').value.trim();
-            const p = document.getElementById('login-password').value.trim();
-
-            if (u === 'admin' && p === 'admin123') {
-                userRole = 'admin';
-            } else if (u === 'coach' && p === 'coach123') {
-                userRole = 'coach';
-            } else {
-                showToast('ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง!', true);
-                return;
-            }
-
-            safeSetStorage('gallery_session_role', userRole);
-
-            document.getElementById('login-overlay').classList.add('hidden');
-            document.getElementById('dashboard-app').classList.remove('hidden');
-
-            document.getElementById('admin-close-date').value = adminCloseDate;
-            document.getElementById('coach-schedule-date').value = coachScheduleDate;
-
-            loadPricingToInputs();
-
-            if (document.getElementById('operating-open-time')) {
-                document.getElementById('operating-open-time').value = courtOperatingHours.startHour || 6;
-            }
-            if (document.getElementById('operating-close-time')) {
-                document.getElementById('operating-close-time').value = courtOperatingHours.endHour || 22;
-            }
-
-            if (userRole === 'coach') {
-                switchTab('coach');
-                document.getElementById('btn-tab-admin')?.classList.add('hidden');
-            } else {
-                switchTab('admin');
-                document.getElementById('btn-tab-admin')?.classList.remove('hidden');
-            }
-
-            renderAdminDashboard();
-            renderCoachView();
-            renderWeeklyDashboard();
-
-            initFirebaseListeners();
-
-            showToast(`ยินดีต้อนรับเข้าสู่ระบบ (${userRole.toUpperCase()})`);
-        }
-
-        function handleLogout() {
-            userRole = null;
-            try { localStorage.removeItem('gallery_session_role'); } catch (e) {}
-            document.getElementById('dashboard-app').classList.add('hidden');
-            document.getElementById('login-overlay').classList.remove('hidden');
-            document.getElementById('login-username').value = '';
-            document.getElementById('login-password').value = '';
-            showToast('ออกจากระบบเรียบร้อยแล้ว');
-        }
-
-        window.addEventListener('DOMContentLoaded', checkSessionOnLoad);
-
-        function switchTab(tabName) {
-            const vAdmin = document.getElementById('view-admin');
-            const vCoach = document.getElementById('view-coach');
-            const vWeekly = document.getElementById('view-weekly');
-            const btnAdmin = document.getElementById('btn-tab-admin');
-            const btnCoach = document.getElementById('btn-tab-coach');
-            const btnWeekly = document.getElementById('btn-tab-weekly');
-
-            if (!vAdmin || !vCoach || !vWeekly || !btnAdmin) return;
-
-            btnAdmin.className = "px-3.5 sm:px-4 py-2 sm:py-2.5 font-bold rounded-lg transition-all text-gray-400 hover:text-white";
-            if (btnCoach) btnCoach.className = "px-3.5 sm:px-4 py-2 sm:py-2.5 font-bold rounded-lg transition-all text-gray-400 hover:text-white";
-            if (btnWeekly) btnWeekly.className = "px-3.5 sm:px-4 py-2 sm:py-2.5 font-bold rounded-lg transition-all text-gray-400 hover:text-white";
-
-            vAdmin.classList.add('hidden');
-            vCoach.classList.add('hidden');
-            vWeekly.classList.add('hidden');
-
-            if (tabName === 'admin') {
-                vAdmin.classList.remove('hidden');
-                btnAdmin.className = "px-3.5 sm:px-4 py-2 sm:py-2.5 font-bold rounded-lg transition-all bg-[#B39250] text-[#1A1A1A]";
-                renderAdminDashboard();
-            } else if (tabName === 'coach') {
-                vCoach.classList.remove('hidden');
-                if (btnCoach) btnCoach.className = "px-3.5 sm:px-4 py-2 sm:py-2.5 font-bold rounded-lg transition-all bg-[#B39250] text-[#1A1A1A]";
-                renderCoachTabButtons();
-                renderCoachView();
-            } else if (tabName === 'weekly') {
-                vWeekly.classList.remove('hidden');
-                if (btnWeekly) btnWeekly.className = "px-3.5 sm:px-4 py-2 sm:py-2.5 font-bold rounded-lg transition-all bg-[#B39250] text-[#1A1A1A]";
-                renderWeeklyDashboard();
-            }
-        }
-
-        // --- STREAMING_CHUNK:Writing pricing settings and coach controls logic... ---
-        // --- 4. PRICING & COACH SETTINGS MANAGEMENT ---
-        function loadPricingToInputs() {
-            if (document.getElementById('cfg-rate-weekday')) document.getElementById('cfg-rate-weekday').value = settings.rateWeekday || 400;
-            if (document.getElementById('cfg-rate-weekend')) document.getElementById('cfg-rate-weekend').value = settings.rateWeekend || 500;
-            if (document.getElementById('cfg-rate-knocker')) document.getElementById('cfg-rate-knocker').value = settings.rateKnocker || 300;
-            if (document.getElementById('cfg-rate-ballmachine')) document.getElementById('cfg-rate-ballmachine').value = settings.rateBallMachine || 250;
-
-            const coachContainer = document.getElementById('coach-settings-list');
-            if (!coachContainer) return;
-            coachContainer.innerHTML = '';
-
-            settings.coaches.forEach((c, idx) => {
-                const div = document.createElement('div');
-                div.className = "p-3 bg-white rounded-xl border border-emerald-100 flex items-center justify-between gap-2 shadow-xs";
-                div.innerHTML = `
-                    <div>
-                        <span class="font-bold text-gray-900 block">${c.name}</span>
-                        <span class="text-xs text-gray-500 font-light">${c.title}</span>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <div class="flex items-center gap-1">
-                            <span class="text-xs font-bold text-gray-700">ค่าสอน:</span>
-                            <input type="number" value="${c.price}" id="cfg-coach-price-${c.id}" class="w-20 p-1.5 border border-gray-300 rounded-lg text-xs font-bold text-emerald-800 outline-none">
-                        </div>
-                        <button onclick="toggleCoachActiveStatus('${c.id}')" class="px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${c.active ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' : 'bg-rose-100 text-rose-800 border border-rose-300'}">
-                            ${c.active ? '🟢 เปิดใช้งาน' : '🔴 ปิดใช้งาน'}
-                        </button>
-                    </div>`;
-                coachContainer.appendChild(div);
-            });
-        }
-
-        function toggleCoachActiveStatus(coachId) {
-            const coach = settings.coaches.find(c => c.id === coachId);
-            if (coach) {
-                coach.active = !coach.active;
-                savePricingSettings();
-            }
-        }
-
-        function savePricingSettings() {
-            settings.rateWeekday = parseInt(document.getElementById('cfg-rate-weekday').value) || 400;
-            settings.rateWeekend = parseInt(document.getElementById('cfg-rate-weekend').value) || 500;
-            settings.rateKnocker = parseInt(document.getElementById('cfg-rate-knocker').value) || 300;
-            settings.rateBallMachine = parseInt(document.getElementById('cfg-rate-ballmachine').value) || 250;
-
-            settings.coaches.forEach(c => {
-                const priceInput = document.getElementById(`cfg-coach-price-${c.id}`);
-                if (priceInput) c.price = parseInt(priceInput.value) || c.price;
-            });
-
-            safeSetStorage('gallery_settings', settings);
-
-            if (useFirebase && db) {
-                db.collection("settings").doc("pricing").set(settings);
-            }
-
-            loadPricingToInputs();
-            renderCoachTabButtons();
-            renderCoachView();
-            showToast('บันทึกการตั้งค่าราคาและสถานะโค้ชเรียบร้อยแล้ว!');
-        }
-
-        // --- STREAMING_CHUNK:Writing slip approval modal and pending queue functions... ---
-        // --- 5. APPROVAL MODAL & STATUS MANAGEMENT ---
-        function approveBooking(id) {
-            const index = bookings.findIndex(b => b.bookingId === id);
-            if (index !== -1) {
-                bookings[index].status = 'confirmed';
-                bookings[index].approvedAt = new Date().toISOString();
-                safeSetStorage('gallery_bookings', bookings);
-
-                if (useFirebase && db) {
-                    db.collection("bookings").doc(id).update({ 
-                        status: 'confirmed', 
-                        approvedAt: new Date().toISOString() 
-                    });
-                }
-                closeApprovalModal();
-                renderAdminDashboard();
-                renderCoachView();
-                renderWeeklyDashboard();
-                showToast(`อนุมัติการจองรหัส ${id} เรียบร้อยแล้ว!`);
-            }
-        }
-
-        function rejectBooking(id) {
-            const index = bookings.findIndex(b => b.bookingId === id);
-            if (index !== -1) {
-                bookings[index].status = 'rejected';
-                safeSetStorage('gallery_bookings', bookings);
-
-                if (useFirebase && db) {
-                    db.collection("bookings").doc(id).update({ status: 'rejected' });
-                }
-                closeApprovalModal();
-                renderAdminDashboard();
-                renderCoachView();
-                renderWeeklyDashboard();
-                showToast(`ปฏิเสธการจองรหัส ${id} เรียบร้อย`, true);
-            }
-        }
-
-        function openApprovalModal(bookingId) {
-            const booking = bookings.find(b => b.bookingId === bookingId);
-            if (!booking) return;
-
-            document.getElementById('m-booking-id').innerText = booking.bookingId;
-            document.getElementById('m-cust-name').innerText = `${booking.bookedBy} (${booking.customerPhone})`;
-            document.getElementById('m-booking-type').innerText = `${getBookingTypeDesc(booking.bookingType)} ${booking.coachName ? `(${booking.coachName})` : ''}`;
-            document.getElementById('m-datetime').innerText = `${formatDateThai(booking.date)} | ${booking.timeSlot} น. (${booking.bookingDuration || 1} ชม.)`;
-            document.getElementById('m-note').innerText = `ระดับ: ${booking.customerSkill || '-'} ${booking.customerNote ? `| ${booking.customerNote}` : ''}`;
-            document.getElementById('m-total-price').innerText = `${booking.totalPrice || 0} ฿`;
-
-            const imgEl = document.getElementById('m-slip-image');
-            imgEl.src = booking.slipUrl || 'https://placehold.co/400x500/1A1A1A/B39250?text=NO+SLIP+IMAGE';
-
-            document.getElementById('btn-modal-approve').onclick = () => approveBooking(booking.bookingId);
-            document.getElementById('btn-modal-reject').onclick = () => rejectBooking(booking.bookingId);
-
-            document.getElementById('approval-modal').classList.remove('hidden');
-        }
-
-        function closeApprovalModal() {
-            document.getElementById('approval-modal').classList.add('hidden');
-        }
-
-        function renderPendingApprovals() {
-            const pendingList = document.getElementById('pending-booking-list');
-            const pendingCountEl = document.getElementById('pending-count');
-            if (!pendingList) return;
-
-            const pendingBookings = bookings.filter(b => b.status === 'pending');
-            if (pendingCountEl) pendingCountEl.innerText = pendingBookings.length;
-
-            pendingList.innerHTML = '';
-            if (pendingBookings.length === 0) {
-                pendingList.innerHTML = `<p class="text-xs sm:text-sm text-gray-500 text-center py-3 font-light">✨ ไม่มีคิวรออนุมัติชำระเงินในขณะนี้</p>`;
-                return;
-            }
-
-            pendingBookings.forEach(pb => {
-                const div = document.createElement('div');
-                div.className = "bg-white p-3.5 rounded-2xl border border-amber-300 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 shadow-xs";
-                
-                const slipThumb = pb.slipUrl 
-                    ? `<img src="${pb.slipUrl}" class="w-12 h-12 object-cover rounded-xl border border-amber-300 shrink-0 cursor-pointer hover:scale-105 transition-all" onclick="openApprovalModal('${pb.bookingId}')" title="คลิกเพื่อดูสลิปขนาดใหญ่">`
-                    : `<div class="w-12 h-12 bg-amber-100 rounded-xl flex items-center justify-center text-xs font-bold text-amber-800 shrink-0">ไม่มีสลิป</div>`;
-
-                div.innerHTML = `
-                    <div class="flex items-center gap-3">
-                        ${slipThumb}
-                        <div>
-                            <div class="flex items-center gap-2">
-                                <span class="font-mono font-bold text-amber-900 text-xs bg-amber-100 px-2 py-0.5 rounded">${pb.bookingId}</span>
-                                <span class="font-bold text-gray-900 text-sm">${pb.bookedBy}</span>
-                                <span class="text-xs text-gray-600 font-light">(${pb.customerPhone})</span>
-                            </div>
-                            <p class="text-xs text-gray-600 font-light mt-0.5">${getBookingTypeDesc(pb.bookingType)} ${pb.coachName ? `(${pb.coachName})` : ''} | 🕒 ${formatDateThai(pb.date)} (${pb.timeSlot} น.)</p>
-                            <p class="text-xs font-bold text-emerald-800">ยอดที่ต้องตรวจสอบ: ${pb.totalPrice || 0} ฿</p>
-                        </div>
-                    </div>
-                    <div class="flex items-center gap-2 self-end sm:self-center">
-                        <button onclick="adminCloseDate='${pb.date}'; document.getElementById('admin-close-date').value='${pb.date}'; renderAdminCourtClosure(); showToast('สลับไปดูตารางวันที่ ${formatDateThai(pb.date)}');" class="px-2.5 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl text-xs font-bold transition-all" title="สลับวันที่ตารางบล็อกสนาม">
-                            📅 ดูวันที่จอง
-                        </button>
-                        <button onclick="openApprovalModal('${pb.bookingId}')" class="px-3 py-2 bg-blue-50 hover:bg-blue-100 text-blue-900 rounded-xl text-xs font-bold transition-all border border-blue-200">
-                            🔎 ตรวจสลิป
-                        </button>
-                        <button onclick="approveBooking('${pb.bookingId}')" class="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all shadow">
-                            ✓ อนุมัติ
-                        </button>
-                        <button onclick="rejectBooking('${pb.bookingId}')" class="px-2.5 py-2 bg-rose-100 hover:bg-rose-200 text-rose-800 rounded-xl text-xs font-bold transition-all">
-                            ✕ ปฏิเสธ
-                        </button>
-                    </div>`;
-                pendingList.appendChild(div);
-            });
-        }
-
-        // --- REALTIME CROSS-TAB SYNC & AUTOMATIC POLLING ---
-        window.addEventListener('storage', function(e) {
-            const latest = safeGetStorage('gallery_bookings', []);
-            bookings = latest.map(b => ({ ...b, status: b.status || 'confirmed' }));
-            adminClosedSlots = safeGetStorage('gallery_admin_closed_slots', {});
-            coachCustomAvailability = safeGetStorage('gallery_coach_availability', {});
-            courtOperatingHours = safeGetStorage('gallery_court_operating_hours', { startHour: 6, endHour: 22 });
-            settings = safeGetStorage('gallery_settings', settings);
-            renderAdminDashboard();
-            renderCoachView();
-            renderWeeklyDashboard();
-        });
-
-        setInterval(function() {
-            if (!useFirebase) {
-                const latest = safeGetStorage('gallery_bookings', []);
-                const formatted = latest.map(b => ({ ...b, status: b.status || 'confirmed' }));
-                if (JSON.stringify(formatted) !== JSON.stringify(bookings)) {
-                    bookings = formatted;
-                    renderAdminDashboard();
-                    renderCoachView();
-                    renderWeeklyDashboard();
-                }
-            }
-        }, 2000);
 
         function saveOperatingHours() {
             const startH = parseInt(document.getElementById('operating-open-time').value);
@@ -1007,7 +852,6 @@
             }
             renderAdminCourtClosure();
             renderCoachView();
-            renderWeeklyDashboard();
             showToast(`บันทึกเวลาเปิด-ปิดสนาม (${startH}:00 - ${endH}:00 น.) เรียบร้อย`);
         }
 
@@ -1016,11 +860,9 @@
         function toggleAdminCourtSlot(slotStr) {
             const key = `${adminCloseDate}_${slotStr}`;
             const isBooked = bookings.some(b => {
-                if (b.date !== adminCloseDate || b.status === 'rejected') return false;
-                const bStartH = parseInt(b.timeSlot.split(' - ')[0].split(':')[0]);
-                const bEndH = parseInt(b.timeSlot.split(' - ')[1].split(':')[0]);
-                const curH = parseInt(slotStr.split(' - ')[0].split(':')[0]);
-                return curH >= bStartH && curH < bEndH;
+                if (b.date !== adminCloseDate || b.status === 'cancelled') return false;
+                const bSubSlots = getSubHourlySlots(b.timeSlot);
+                return bSubSlots.includes(slotStr);
             });
 
             if (isBooked) {
@@ -1033,7 +875,6 @@
                 safeSetStorage('gallery_admin_closed_slots', adminClosedSlots);
                 if (useFirebase && db) { db.collection("admin_closed_slots").doc(key).delete(); }
                 renderAdminCourtClosure();
-                renderWeeklyDashboard();
                 showToast(`ปลดล็อกเวลา ${slotStr} เปิดใช้งานสนามปกติ`);
             } else {
                 const reasonInput = document.getElementById('admin-close-reason-input').value.trim();
@@ -1044,7 +885,6 @@
 
                 if (useFirebase && db) { db.collection("admin_closed_slots").doc(key).set(closureData); }
                 renderAdminCourtClosure();
-                renderWeeklyDashboard();
                 showToast(`บล็อกปิดเวลา ${slotStr} (${reason}) เรียบร้อย`);
             }
         }
@@ -1057,27 +897,18 @@
 
             hourlySlots.forEach(slotStr => {
                 const key = `${adminCloseDate}_${slotStr}`;
-                const matchedBooking = bookings.find(b => {
-                    if (b.date !== adminCloseDate || b.status === 'rejected') return false;
-                    const bStartH = parseInt(b.timeSlot.split(' - ')[0].split(':')[0]);
-                    const bEndH = parseInt(b.timeSlot.split(' - ')[1].split(':')[0]);
-                    const curH = parseInt(slotStr.split(' - ')[0].split(':')[0]);
-                    return curH >= bStartH && curH < bEndH;
+                const isBooked = bookings.some(b => {
+                    if (b.date !== adminCloseDate || b.status === 'cancelled') return false;
+                    const bSubSlots = getSubHourlySlots(b.timeSlot);
+                    return bSubSlots.includes(slotStr);
                 });
-
                 const isBlocked = !!adminClosedSlots[key];
                 const btn = document.createElement('button');
 
-                if (matchedBooking) {
-                    if (matchedBooking.status === 'pending') {
-                        btn.className = "p-3 rounded-2xl border-2 border-amber-400 bg-amber-100 text-amber-950 text-xs font-bold text-center transition-all hover:bg-amber-200 shadow-sm animate-pulse cursor-pointer";
-                        btn.onclick = () => openApprovalModal(matchedBooking.bookingId);
-                        btn.innerHTML = `${slotStr.split(' - ')[0]}<br><span class="text-[10px] sm:text-xs text-amber-900 font-bold block">⏳ รออนุมัติ (ดูสลิป)</span>`;
-                    } else {
-                        btn.disabled = true;
-                        btn.className = "p-3 rounded-2xl border border-gray-200 bg-gray-100 text-gray-400 text-xs font-bold text-center cursor-not-allowed";
-                        btn.innerHTML = `${slotStr.split(' - ')[0]}<br><span class="text-[10px] sm:text-xs text-amber-700 font-bold">🔴 ติดคิวจอง</span>`;
-                    }
+                if (isBooked) {
+                    btn.disabled = true;
+                    btn.className = "p-3 rounded-2xl border border-gray-200 bg-gray-100 text-gray-400 text-xs font-bold text-center cursor-not-allowed";
+                    btn.innerHTML = `${slotStr.split(' - ')[0]}<br><span class="text-[10px] sm:text-xs text-amber-700 font-bold">🔴 ติดคิวจอง</span>`;
                 } else if (isBlocked) {
                     btn.className = "p-3 rounded-2xl border border-rose-300 bg-rose-50 text-rose-800 text-xs font-bold text-center transition-all hover:bg-rose-100 shadow-sm";
                     btn.onclick = () => toggleAdminCourtSlot(slotStr);
@@ -1092,78 +923,87 @@
             });
         }
 
-        // --- STREAMING_CHUNK:Writing dashboard metrics and booking table renderers... ---
+        // ✅ FIXED BUG: 'sum' is properly initialized and passed to reduce
         function renderAdminDashboard() {
-            renderPendingApprovals();
             renderAdminCourtClosure();
+            
+            const pendingList = bookings.filter(b => b.status === 'pending');
+            const confirmedList = bookings.filter(b => b.status === 'confirmed' || !b.status);
 
-            const confirmedBookings = bookings.filter(b => b.status === 'confirmed');
-            const todayStr = getTodayStr();
+            const pendingCountEl = document.getElementById('pending-count');
+            if (pendingCountEl) pendingCountEl.innerText = pendingList.length;
 
-            // กรองเฉพาะคิวที่ยืนยันแล้ว และเป็นวันปัจจุบันขึ้นไป (ซ่อนวันที่ผ่านไปแล้ว)
-            const upcomingBookings = confirmedBookings.filter(b => b.date >= todayStr);
-
-            // เรียงลำดับตามวันที่และเวลาที่จองสนาม (จากใกล้สุดไปไกลสุด)
-            upcomingBookings.sort((a, b) => {
-                if (a.date !== b.date) {
-                    return (a.date || '').localeCompare(b.date || '');
+            const pendingContainer = document.getElementById('pending-booking-list');
+            if (pendingContainer) {
+                pendingContainer.innerHTML = '';
+                if (pendingList.length === 0) {
+                    pendingContainer.innerHTML = `<p class="text-xs text-amber-900 font-light text-center py-2">ไม่มีคิวที่รอการตรวจสอบสลิปในขณะนี้</p>`;
+                } else {
+                    pendingList.forEach(b => {
+                        const div = document.createElement('div');
+                        div.className = "bg-white p-3.5 rounded-2xl border border-amber-300 shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3";
+                        div.innerHTML = `
+                            <div>
+                                <div class="flex items-center gap-2">
+                                    <span class="font-mono font-bold text-amber-900 text-xs bg-amber-100 px-2 py-0.5 rounded">${b.bookingId}</span>
+                                    <span class="font-bold text-gray-900">${b.bookedBy} (${b.customerPhone})</span>
+                                </div>
+                                <p class="text-xs text-gray-600 mt-1">${formatDateThai(b.date)} | ${b.timeSlot} น. (${b.bookingDuration || 1} ชม.) | <span class="font-bold text-amber-900">${getBookingTypeDesc(b)}</span></p>
+                            </div>
+                            <div class="flex items-center gap-2 self-end sm:self-center">
+                                <span class="font-bold text-emerald-800 text-base">${b.totalPrice} ฿</span>
+                                <button onclick="openApprovalModal('${b.bookingId}')" class="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-xs font-bold transition-all shadow">
+                                    🔎 ตรวจสอบสลิป
+                                </button>
+                            </div>`;
+                        pendingContainer.appendChild(div);
+                    });
                 }
-                const startA = a.timeSlot ? a.timeSlot.split(' - ')[0] : '';
-                const startB = b.timeSlot ? b.timeSlot.split(' - ')[0] : '';
-                return startA.localeCompare(startB);
-            });
+            }
 
             const metricsContainer = document.getElementById('admin-metrics-container');
-
             if (metricsContainer) {
-                if (userRole === 'coach') {
-                    const totalHours = confirmedBookings.reduce((sum, b) => sum + (b.bookingDuration || 1), 0);
-                    metricsContainer.innerHTML = `
-                        <div class="bg-white p-4 rounded-2xl border border-gray-200 text-center shadow-sm">
-                            <span class="text-xs sm:text-sm text-gray-500 font-light block mb-1">คิวจองที่ยืนยันแล้ว</span>
-                            <span class="text-xl sm:text-2xl font-bold text-gray-900">${confirmedBookings.length} คิว</span>
-                        </div>
-                        <div class="bg-emerald-50/70 p-4 rounded-2xl border border-emerald-100 text-center shadow-sm col-span-3">
-                            <span class="text-xs sm:text-sm text-emerald-700 font-light block mb-1">ชั่วโมงการสอนรวมทั้งหมด</span>
-                            <span class="text-xl sm:text-2xl font-bold text-emerald-900">${totalHours} ชั่วโมง</span>
-                        </div>`;
-                } else {
-                    const courtTotal = confirmedBookings.reduce((sum, b) => sum + (b.courtPrice || 0), 0);
-                    const coachTotal = confirmedBookings.reduce((sum, b) => sum + (b.coachPrice || 0), 0);
-                    metricsContainer.innerHTML = `
-                        <div class="bg-white p-4 rounded-2xl border border-gray-200 text-center shadow-sm">
-                            <span class="text-xs sm:text-sm text-gray-500 font-light block mb-1">คิวจองที่ยืนยันแล้ว</span>
-                            <span class="text-xl sm:text-2xl font-bold text-gray-900">${confirmedBookings.length} คิว</span>
-                        </div>
-                        <div class="bg-blue-50/70 p-4 rounded-2xl border border-blue-100 text-center shadow-sm">
-                            <span class="text-xs sm:text-sm text-blue-700 font-light block mb-1">รายได้ค่าสนาม</span>
-                            <span class="text-xl sm:text-2xl font-bold text-blue-900">${courtTotal} ฿</span>
-                        </div>
-                        <div class="bg-emerald-50/70 p-4 rounded-2xl border border-emerald-100 text-center shadow-sm">
-                            <span class="text-xs sm:text-sm text-emerald-700 font-light block mb-1">รายได้ค่าสอน</span>
-                            <span class="text-xl sm:text-2xl font-bold text-emerald-900">${coachTotal} ฿</span>
-                        </div>
-                        <div class="bg-amber-50/70 p-4 rounded-2xl border border-amber-200 text-center shadow-sm">
-                            <span class="text-xs sm:text-sm text-amber-800 font-light block mb-1">รายได้รวมสุทธิ</span>
-                            <span class="text-xl sm:text-2xl font-bold text-amber-950">${courtTotal + coachTotal} ฿</span>
-                        </div>`;
-                }
+                const totalCount = confirmedList.length;
+                
+                // ✅ BUG FIXED: (sum, b) to ensure 'sum' is defined in the reduce callback
+                const courtRev = confirmedList.reduce((sum, b) => sum + Number(b.courtPrice || 0), 0);
+                const coachRev = confirmedList.reduce((sum, b) => sum + Number(b.coachPrice || 0), 0);
+                const netRev = courtRev + coachRev;
+
+                metricsContainer.innerHTML = `
+                    <div class="bg-white p-4 rounded-2xl border border-gray-200 text-center shadow-sm">
+                        <span class="text-xs sm:text-sm text-gray-500 font-light block mb-1">คิวจองที่ยืนยันแล้ว</span>
+                        <span class="text-xl sm:text-2xl font-bold text-gray-900">${totalCount} คิว</span>
+                    </div>
+                    <div class="bg-blue-50/70 p-4 rounded-2xl border border-blue-100 text-center shadow-sm">
+                        <span class="text-xs sm:text-sm text-blue-700 font-light block mb-1">รายได้รวมค่าสนาม</span>
+                        <span class="text-xl sm:text-2xl font-bold text-blue-900">${courtRev} ฿</span>
+                    </div>
+                    <div class="bg-emerald-50/70 p-4 rounded-2xl border border-emerald-100 text-center shadow-sm">
+                        <span class="text-xs sm:text-sm text-emerald-700 font-light block mb-1">รายได้รวมค่าสอน/น็อค</span>
+                        <span class="text-xl sm:text-2xl font-bold text-emerald-900">${coachRev} ฿</span>
+                    </div>
+                    <div class="bg-amber-50/70 p-4 rounded-2xl border border-amber-200 text-center shadow-sm">
+                        <span class="text-xs sm:text-sm text-amber-800 font-light block mb-1">รายได้รวมสุทธิทั้งหมด</span>
+                        <span class="text-xl sm:text-2xl font-bold text-amber-950">${netRev} ฿</span>
+                    </div>`;
             }
 
             const list = document.getElementById('admin-booking-list');
             if (!list) return;
             list.innerHTML = '';
-            if (upcomingBookings.length === 0) {
-                list.innerHTML = `<p class="text-xs sm:text-sm text-gray-400 text-center py-6 font-light">ไม่มีรายการคิวจองล่วงหน้าในขณะนี้ (คิวในอดีตถูกซ่อนไว้ สามารถกดปุ่ม Export เพื่อดูประวัติทั้งหมดได้)</p>`; 
-                return;
+
+            const todayStr = getTodayStr();
+            const futureConfirmed = confirmedList.filter(b => b.date >= todayStr);
+            futureConfirmed.sort((a, b) => (a.date + a.timeSlot).localeCompare(b.date + b.timeSlot));
+
+            if (futureConfirmed.length === 0) {
+                list.innerHTML = `<p class="text-xs sm:text-sm text-gray-400 text-center py-6 font-light">ไม่มีรายการคิวการจองในปัจจุบันและอนาคต</p>`; return;
             }
 
-            upcomingBookings.forEach(b => {
+            futureConfirmed.forEach(b => {
                 const div = document.createElement('div');
                 div.className = "p-3.5 sm:p-4 bg-gray-50 rounded-2xl border border-gray-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2";
-                
-                const priceDisplay = (userRole === 'coach') ? '' : `<span class="font-bold text-emerald-700 text-sm sm:text-base">${b.totalPrice || 0} ฿</span>`;
-
                 div.innerHTML = `
                     <div>
                         <div class="flex flex-wrap items-center gap-2">
@@ -1171,64 +1011,134 @@
                             <span class="font-bold text-gray-900 text-sm sm:text-base">${b.bookedBy || '-'}</span>
                             <span class="text-xs text-gray-600 font-light">(${b.customerPhone || '-'})</span>
                         </div>
-                        <p class="text-xs sm:text-sm text-gray-600 font-light mt-1">${b.courtName || 'Indoor Tennis Court'} | <span class="font-bold text-emerald-700">${getBookingTypeDesc(b.bookingType)} ${b.coachName ? `(${b.coachName})` : ''}</span></p>
+                        <p class="text-xs sm:text-sm text-gray-600 font-light mt-1">${b.courtName || 'Indoor Tennis Court'} | <span class="font-semibold text-emerald-700">${getBookingTypeDesc(b)} ${b.coachName ? `(${b.coachName})` : ''}</span></p>
                         <p class="text-xs text-gray-500 font-light mt-0.5">🗓️ ${formatDateThai(b.date)} | 🕒 ${b.timeSlot} น. (${b.bookingDuration || 1} ชม.)</p>
                     </div>
                     <div class="flex items-center gap-3 self-end sm:self-center">
-                        ${priceDisplay}
-                        <button onclick="deleteBooking('${b.bookingId}')" class="text-red-500 hover:bg-red-50 p-1.5 rounded-lg text-sm transition-all" title="ยกเลิกคิว">🗑️ ลบ</button>
+                        <span class="font-bold text-emerald-700 text-sm sm:text-base">${b.totalPrice || 0} ฿</span>
+                        <button onclick="openDeleteModal('${b.bookingId}')" class="text-red-600 hover:bg-red-50 px-2.5 py-1.5 border border-red-200 rounded-xl text-xs font-bold transition-all" title="ยกเลิกคิว">🗑️ ลบ</button>
                     </div>`;
                 list.appendChild(div);
             });
         }
 
-        function deleteBooking(id) {
-            bookings = bookings.filter(b => b.bookingId !== id);
-            safeSetStorage('gallery_bookings', bookings);
-            if (useFirebase && db) { db.collection("bookings").doc(id).delete(); }
-            renderAdminDashboard(); renderCoachView(); renderWeeklyDashboard();
-            showToast('ยกเลิกรายการเรียบร้อย');
+        function openApprovalModal(id) {
+            const b = bookings.find(x => x.bookingId === id);
+            if (!b) return;
+
+            document.getElementById('m-booking-id').innerText = b.bookingId;
+            document.getElementById('m-slip-image').src = b.slipImage || '';
+            document.getElementById('m-cust-name').innerText = `${b.bookedBy} (${b.customerPhone})`;
+            document.getElementById('m-booking-type').innerText = getBookingTypeDesc(b);
+            document.getElementById('m-datetime').innerText = `${formatDateThai(b.date)} (${b.timeSlot} น.)`;
+            document.getElementById('m-note').innerText = `ระดับ: ${b.customerSkill || '-'} / หมายเหตุ: ${b.customerNote || '-'}`;
+            document.getElementById('m-total-price').innerText = `${b.totalPrice} ฿`;
+
+            document.getElementById('btn-modal-approve').onclick = () => approveBookingPayment(id);
+            document.getElementById('btn-modal-reject').onclick = () => openDeleteModal(id);
+
+            document.getElementById('approval-modal').classList.remove('hidden');
         }
 
-        // --- STREAMING_CHUNK:Writing coach view and schedule rendering functions... ---
-        // --- 6. COACH VIEW FUNCTIONS ---
-        function renderCoachTabButtons() {
+        function closeApprovalModal() {
+            document.getElementById('approval-modal').classList.add('hidden');
+        }
+
+        function approveBookingPayment(id) {
+            const b = bookings.find(x => x.bookingId === id);
+            if (b) {
+                b.status = 'confirmed';
+                safeSetStorage('gallery_bookings', bookings);
+                if (useFirebase && db) {
+                    db.collection("bookings").doc(id).update({ status: 'confirmed' });
+                }
+                closeApprovalModal();
+                renderAdminDashboard();
+                renderCoachView();
+                renderWeeklyDashboard();
+                showToast(`อนุมัติการชำระเงินคิวจอง ${id} เรียบร้อยแล้ว`);
+            }
+        }
+
+        function openDeleteModal(id) {
+            closeApprovalModal();
+            const b = bookings.find(x => x.bookingId === id);
+            if (!b) return;
+
+            itemToDeleteId = id;
+            document.getElementById('del-booking-id').innerText = b.bookingId;
+            document.getElementById('del-cust-name').innerText = `${b.bookedBy} (${b.customerPhone})`;
+            document.getElementById('del-datetime').innerText = `${formatDateThai(b.date)} (${b.timeSlot} น.)`;
+            document.getElementById('del-type').innerText = getBookingTypeDesc(b);
+            document.getElementById('del-price').innerText = `${b.totalPrice} ฿`;
+
+            document.getElementById('delete-modal').classList.remove('hidden');
+        }
+
+        function closeDeleteModal() {
+            itemToDeleteId = null;
+            document.getElementById('delete-modal').classList.add('hidden');
+        }
+
+        function executeDeleteBooking() {
+            if (!itemToDeleteId) return;
+            const id = itemToDeleteId;
+            const b = bookings.find(x => x.bookingId === id);
+            const reason = document.getElementById('del-reason-input').value.trim() || 'แอดมินยกเลิกคิว';
+
+            if (b) {
+                // Send LINE OA Alert payload log
+                const lineAlertPayload = {
+                    event: "BOOKING_CANCELLED",
+                    bookingId: b.bookingId,
+                    customerName: b.bookedBy,
+                    customerPhone: b.customerPhone,
+                    date: b.date,
+                    timeSlot: b.timeSlot,
+                    reason: reason,
+                    cancelledBy: userRole || 'admin'
+                };
+                console.log("LINE OA Alert Payload Sent:", lineAlertPayload);
+
+                bookings = bookings.filter(x => x.bookingId !== id);
+                safeSetStorage('gallery_bookings', bookings);
+
+                if (useFirebase && db) {
+                    db.collection("bookings").doc(id).delete();
+                }
+
+                closeDeleteModal();
+                renderAdminDashboard();
+                renderCoachView();
+                renderWeeklyDashboard();
+                showToast(`ยกเลิกและลบคิว ${id} พร้อมแจ้งเตือน LINE OA เรียบร้อย`);
+            }
+        }
+
+        function renderCoachTabsControls() {
             const container = document.getElementById('coach-tab-buttons-container');
             if (!container) return;
             container.innerHTML = '';
 
-            const activeCoaches = settings.coaches.filter(c => c.active !== false);
-            if (activeCoaches.length === 0) {
-                container.innerHTML = `<span class="text-xs text-rose-600 font-bold">ไม่มีโค้ชที่เปิดใช้งานในระบบ</span>`;
-                return;
-            }
+            const centralCoaches = (typeof window.COACHES_DATA !== 'undefined' && window.COACHES_DATA.length > 0)
+                ? window.COACHES_DATA
+                : defaultCoachesList;
 
-            if (!activeCoaches.some(c => c.id === activeCoachViewTab)) {
-                activeCoachViewTab = activeCoaches[0].id;
-            }
-
-            activeCoaches.forEach(c => {
+            centralCoaches.forEach(coach => {
                 const btn = document.createElement('button');
-                btn.onclick = () => switchCoachTab(c.id);
-                btn.id = `c-tab-${c.id}`;
-                btn.className = (c.id === activeCoachViewTab) 
-                    ? 'px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all bg-[#1A1A1A] text-white' 
-                    : 'px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all bg-gray-100 text-gray-600';
-                btn.innerText = `👨‍🏫 ${c.name}`;
+                btn.onclick = () => switchCoachTab(coach.id);
+                btn.id = `c-tab-${coach.id}`;
+                btn.className = (coach.id === activeCoachViewTab)
+                    ? 'px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all bg-[#1A1A1A] text-white shadow'
+                    : 'px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all bg-gray-100 text-gray-600 hover:bg-gray-200';
+                btn.innerText = `👨‍🏫 ${coach.name}`;
                 container.appendChild(btn);
             });
         }
 
         function switchCoachTab(coachId) {
             activeCoachViewTab = coachId;
-            settings.coaches.forEach(c => {
-                const tab = document.getElementById(`c-tab-${c.id}`);
-                if (tab) {
-                    tab.className = (c.id === coachId) 
-                        ? 'px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all bg-[#1A1A1A] text-white' 
-                        : 'px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all bg-gray-100 text-gray-600';
-                }
-            });
+            renderCoachTabsControls();
             renderCoachView();
         }
 
@@ -1242,28 +1152,39 @@
             if (coachCustomAvailability[key] && coachCustomAvailability[key][slotStr] !== undefined) {
                 return coachCustomAvailability[key][slotStr];
             }
-            const coachObj = settings.coaches.find(c => c.id === coachId);
-            if (!coachObj || coachObj.active === false) return false;
+            const centralCoaches = (typeof window.COACHES_DATA !== 'undefined' && window.COACHES_DATA.length > 0)
+                ? window.COACHES_DATA
+                : defaultCoachesList;
+
+            const coachObj = centralCoaches.find(c => c.id === coachId);
+            if (!coachObj) return false;
             const parts = dateStr.split('-');
             const dayOfWeek = new Date(parseInt(parts[0]), parseInt(parts[1])-1, parseInt(parts[2])).getDay();
             if (!coachObj.availableDays.includes(dayOfWeek)) return false;
-            if (coachId === 'coach_to' && dayOfWeek === 5 && parseInt(slotStr.split(':')[0]) < 12) return false;
+            if (coachId === 'coach3' && dayOfWeek === 5 && parseInt(slotStr.split(':')[0]) < 12) return false;
             return true;
         }
 
         function renderCoachView() {
-            const coachObj = settings.coaches.find(c => c.id === activeCoachViewTab);
+            renderCoachTabsControls();
+            const centralCoaches = (typeof window.COACHES_DATA !== 'undefined' && window.COACHES_DATA.length > 0)
+                ? window.COACHES_DATA
+                : defaultCoachesList;
+
+            const coachObj = centralCoaches.find(c => c.id === activeCoachViewTab);
             if (!coachObj) return;
+
+            const settingMatch = settings.coaches ? settings.coaches.find(sc => sc.id === coachObj.id || sc.name === coachObj.name) : null;
+            const currentPrice = settingMatch ? settingMatch.price : coachObj.price;
 
             const badge = document.getElementById('coach-info-badge');
             if (badge) {
-                const priceInfo = (userRole === 'coach') ? '' : `<span class="font-bold text-emerald-800 text-base sm:text-lg">${coachObj.price} ฿/ชม.</span>`;
                 badge.innerHTML = `
                     <div>
-                        <span class="font-bold text-amber-950 block text-sm sm:text-base">${coachObj.name} (${coachObj.title})</span>
-                        <span class="text-xs sm:text-sm text-amber-800 font-light">${coachObj.desc}</span>
+                        <span class="font-bold text-amber-950 block text-sm sm:text-base">${coachObj.name}</span>
+                        <span class="text-xs sm:text-sm text-amber-800 font-light">${coachObj.daysText || ''} | ${coachObj.desc || ''}</span>
                     </div>
-                    ${priceInfo}`;
+                    <span class="font-bold text-emerald-800 text-base sm:text-lg">${currentPrice} ฿/ชม./คน</span>`;
             }
 
             const grid = document.getElementById('coach-slot-grid');
@@ -1273,11 +1194,9 @@
 
             hourlySlots.forEach(slotStr => {
                 const isBooked = bookings.some(b => {
-                    if (b.date !== coachScheduleDate || b.coachId !== coachObj.id || b.status === 'rejected') return false;
-                    const bStartH = parseInt(b.timeSlot.split(' - ')[0].split(':')[0]);
-                    const bEndH = parseInt(b.timeSlot.split(' - ')[1].split(':')[0]);
-                    const curH = parseInt(slotStr.split(' - ')[0].split(':')[0]);
-                    return curH >= bStartH && curH < bEndH;
+                    if (b.date !== coachScheduleDate || b.coachId !== coachObj.id || b.status === 'cancelled') return false;
+                    const bSubSlots = getSubHourlySlots(b.timeSlot);
+                    return bSubSlots.includes(slotStr);
                 });
                 const isAvail = isCoachSetAvailable(coachObj.id, coachScheduleDate, slotStr);
                 const btn = document.createElement('button');
@@ -1311,8 +1230,8 @@
                     div.className = "p-3.5 bg-white rounded-2xl border border-gray-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2";
                     div.innerHTML = `
                         <div>
-                            <p class="font-bold text-gray-900 text-sm sm:text-base">🗓️ ${formatDateThai(cb.date)} (${cb.timeSlot} น.) - ${cb.bookingDuration || 1} ชั่วโมง</p>
-                            <p class="text-gray-600 font-light text-xs sm:text-sm mt-0.5">นักเรียน: <span class="font-bold text-gray-800">${cb.bookedBy}</span> (${cb.customerPhone}) | ระดับ: ${cb.customerSkill}</p>
+                            <p class="font-bold text-gray-900 text-sm sm:text-base">🗓️ ${formatDateThai(cb.date)} (${cb.timeSlot} น.) - [${cb.studentCount || 1} คน]</p>
+                            <p class="text-gray-600 text-xs sm:text-sm mt-0.5 font-light">นักเรียน: <span class="font-bold text-gray-800">${cb.bookedBy}</span> (${cb.customerPhone}) | ระดับ: ${cb.customerSkill || '-'}</p>
                             ${cb.customerNote ? `<p class="text-amber-900 text-xs font-light mt-0.5">หมายเหตุ: ${cb.customerNote}</p>` : ''}
                         </div>
                         <span class="bg-emerald-100 text-emerald-800 px-3 py-1 rounded-full text-xs font-bold shrink-0">● ยืนยันคิวแล้ว</span>`;
@@ -1335,222 +1254,192 @@
             showToast('อัปเดตสถานะเวลาสอนเรียบร้อย');
         }
 
-        // --- STREAMING_CHUNK:Writing weekly summary dashboard and timetable matrix grid renderer... ---
-        // --- 7. WEEKLY DASHBOARD RENDER ---
         function changeWeek(offset) {
             const parts = weeklyStartMondayStr.split('-').map(Number);
             const currentMonday = new Date(parts[0], parts[1] - 1, parts[2]);
-            if (offset === 0) {
-                weeklyStartMondayStr = getMondayDateStr(new Date());
-            } else {
-                currentMonday.setDate(currentMonday.getDate() + (offset * 7));
-                weeklyStartMondayStr = currentMonday.toISOString().split('T')[0];
-            }
+            currentMonday.setDate(currentMonday.getDate() + (offset * 7));
+            weeklyStartMondayStr = currentMonday.toISOString().split('T')[0];
             renderWeeklyDashboard();
         }
 
         function renderWeeklyDashboard() {
             const weekDates = getWeekDatesArray(weeklyStartMondayStr);
-            const startDateFormatted = formatDateThai(weekDates[0]);
-            const endDateFormatted = formatDateThai(weekDates[6]);
+            const sundayStr = weekDates[6];
 
             const labelEl = document.getElementById('weekly-date-range-label');
-            if (labelEl) labelEl.innerText = `ประจำสัปดาห์: ${startDateFormatted} - ${endDateFormatted}`;
+            if (labelEl) {
+                labelEl.innerText = `ประจำสัปดาห์: ${formatDateThai(weeklyStartMondayStr)} ถึง ${formatDateThai(sundayStr)}`;
+            }
 
-            const weeklyBookings = bookings.filter(b => weekDates.includes(b.date));
-            const confirmedWeekly = weeklyBookings.filter(b => b.status === 'confirmed');
+            const weeklyConfirmed = bookings.filter(b => b.status === 'confirmed' && weekDates.includes(b.date));
 
-            const metricsContainer = document.getElementById('weekly-metrics-container');
-            if (metricsContainer) {
+            const totalBookingsCount = weeklyConfirmed.length;
+            const totalHoursCount = weeklyConfirmed.reduce((sum, b) => sum + Number(b.bookingDuration || 1), 0);
+            
+            const totalCourtRev = weeklyConfirmed.reduce((sum, b) => sum + Number(b.courtPrice || 0), 0);
+            const totalCoachRev = weeklyConfirmed.reduce((sum, b) => sum + Number(b.coachPrice || 0), 0);
+            const totalNetRev = totalCourtRev + totalCoachRev;
+
+            const weeklyMetricsContainer = document.getElementById('weekly-metrics-container');
+            if (weeklyMetricsContainer) {
                 if (userRole === 'coach') {
-                    const totalCoachHours = confirmedWeekly.reduce((sum, b) => sum + (b.bookingDuration || 1), 0);
-                    metricsContainer.innerHTML = `
+                    weeklyMetricsContainer.innerHTML = `
                         <div class="bg-white p-4 rounded-2xl border border-gray-200 text-center shadow-sm">
-                            <span class="text-xs sm:text-sm text-gray-500 font-light block mb-1">คิวจองสัปดาห์นี้</span>
-                            <span class="text-xl sm:text-2xl font-bold text-gray-900">${confirmedWeekly.length} คิว</span>
-                        </div>
-                        <div class="bg-emerald-50/70 p-4 rounded-2xl border border-emerald-100 text-center shadow-sm col-span-3">
-                            <span class="text-xs sm:text-sm text-emerald-700 font-light block mb-1">ชั่วโมงการสอนรวมสัปดาห์นี้</span>
-                            <span class="text-xl sm:text-2xl font-bold text-emerald-900">${totalCoachHours} ชั่วโมง</span>
-                        </div>`;
-                } else {
-                    const courtTotal = confirmedWeekly.reduce((sum, b) => sum + (b.courtPrice || 0), 0);
-                    const coachTotal = confirmedWeekly.reduce((sum, b) => sum + (b.coachPrice || 0), 0);
-                    metricsContainer.innerHTML = `
-                        <div class="bg-white p-4 rounded-2xl border border-gray-200 text-center shadow-sm">
-                            <span class="text-xs sm:text-sm text-gray-500 font-light block mb-1">คิวจองรวมสัปดาห์นี้</span>
-                            <span class="text-xl sm:text-2xl font-bold text-gray-900">${confirmedWeekly.length} คิว</span>
-                        </div>
-                        <div class="bg-blue-50/70 p-4 rounded-2xl border border-blue-100 text-center shadow-sm">
-                            <span class="text-xs sm:text-sm text-blue-700 font-light block mb-1">รายได้ค่าสนามสัปดาห์นี้</span>
-                            <span class="text-xl sm:text-2xl font-bold text-blue-900">${courtTotal} ฿</span>
+                            <span class="text-xs text-gray-500 font-light block mb-1">จำนวนคิวจองประจำสัปดาห์</span>
+                            <span class="text-xl font-bold text-gray-900">${totalBookingsCount} คิว</span>
                         </div>
                         <div class="bg-emerald-50/70 p-4 rounded-2xl border border-emerald-100 text-center shadow-sm">
-                            <span class="text-xs sm:text-sm text-emerald-700 font-light block mb-1">รายได้ค่าสอนสัปดาห์นี้</span>
-                            <span class="text-xl sm:text-2xl font-bold text-emerald-900">${coachTotal} ฿</span>
+                            <span class="text-xs text-emerald-700 font-light block mb-1">จำนวนชั่วโมงสอนรวม</span>
+                            <span class="text-xl font-bold text-emerald-900">${totalHoursCount} ชั่วโมง</span>
+                        </div>`;
+                } else {
+                    weeklyMetricsContainer.innerHTML = `
+                        <div class="bg-white p-4 rounded-2xl border border-gray-200 text-center shadow-sm">
+                            <span class="text-xs text-gray-500 font-light block mb-1">จำนวนคิวประจำสัปดาห์</span>
+                            <span class="text-xl font-bold text-gray-900">${totalBookingsCount} คิว (${totalHoursCount} ชม.)</span>
+                        </div>
+                        <div class="bg-blue-50/70 p-4 rounded-2xl border border-blue-100 text-center shadow-sm">
+                            <span class="text-xs text-blue-700 font-light block mb-1">รายได้ค่าสนาม</span>
+                            <span class="text-xl font-bold text-blue-900">${totalCourtRev} ฿</span>
+                        </div>
+                        <div class="bg-emerald-50/70 p-4 rounded-2xl border border-emerald-100 text-center shadow-sm">
+                            <span class="text-xs text-emerald-700 font-light block mb-1">รายได้ค่าสอน/อุปกรณ์</span>
+                            <span class="text-xl font-bold text-emerald-900">${totalCoachRev} ฿</span>
                         </div>
                         <div class="bg-amber-50/70 p-4 rounded-2xl border border-amber-200 text-center shadow-sm">
-                            <span class="text-xs sm:text-sm text-amber-800 font-light block mb-1">รายได้รวมสุทธิสัปดาห์นี้</span>
-                            <span class="text-xl sm:text-2xl font-bold text-amber-950">${courtTotal + coachTotal} ฿</span>
+                            <span class="text-xs text-amber-800 font-light block mb-1">รายได้รวมสัปดาห์นี้</span>
+                            <span class="text-xl font-bold text-amber-950">${totalNetRev} ฿</span>
                         </div>`;
                 }
             }
 
-            const thWeeklyRev = document.getElementById('th-weekly-rev');
-            if (thWeeklyRev) {
-                if (userRole === 'coach') thWeeklyRev.classList.add('hidden');
-                else thWeeklyRev.classList.remove('hidden');
+            // Breakdown table
+            const tbody = document.getElementById('weekly-type-breakdown-tbody');
+            const thRev = document.getElementById('th-weekly-rev');
+            if (thRev) {
+                if (userRole === 'coach') thRev.classList.add('hidden');
+                else thRev.classList.remove('hidden');
             }
 
-            const breakdownTbody = document.getElementById('weekly-type-breakdown-tbody');
-            if (breakdownTbody) {
-                breakdownTbody.innerHTML = '';
-                
-                const categories = [
-                    { key: 'court_only', label: '🎾 เช่าสนามอย่างเดียว' },
-                    { key: 'coach_gun', label: '👨‍🏫 เรียนกับ Coach Gun' },
-                    { key: 'coach_nok', label: '👩‍🏫 เรียนกับ Coach Nok' },
-                    { key: 'coach_to', label: '🧢 เรียนกับ Coach To' },
-                    { key: 'court_and_knocker', label: '🏸 เช่าสนาม + น็อคเกอร์' },
-                    { key: 'court_and_ballmachine', label: '🤖 เช่าสนาม + เครื่องยิงบอล' }
-                ];
+            if (tbody) {
+                tbody.innerHTML = '';
+                const types = ['court_only', 'court_and_coach', 'court_and_knocker', 'court_and_ballmachine'];
 
-                categories.forEach(cat => {
-                    const matchedBookings = confirmedWeekly.filter(b => {
-                        if (cat.key === 'court_only') return b.bookingType === 'court_only' || (!b.bookingType && !b.coachId);
-                        if (cat.key === 'coach_gun') return b.coachId === 'coach_gun';
-                        if (cat.key === 'coach_nok') return b.coachId === 'coach_nok';
-                        if (cat.key === 'coach_to') return b.coachId === 'coach_to';
-                        if (cat.key === 'court_and_knocker') return b.bookingType === 'court_and_knocker';
-                        if (cat.key === 'court_and_ballmachine') return b.bookingType === 'court_and_ballmachine';
-                        return false;
+                types.forEach(t => {
+                    const typeBookings = weeklyConfirmed.filter(b => b.bookingType === t);
+                    if (typeBookings.length > 0) {
+                        const count = typeBookings.length;
+                        const hrs = typeBookings.reduce((sum, b) => sum + Number(b.bookingDuration || 1), 0);
+                        const rev = typeBookings.reduce((sum, b) => sum + Number(b.totalPrice || 0), 0);
+
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td class="p-3 font-bold text-gray-900">${getBookingTypeDesc(t)}</td>
+                            <td class="p-3 text-center">${count} คิว</td>
+                            <td class="p-3 text-center">${hrs} ชม.</td>
+                            ${userRole !== 'coach' ? `<td class="p-3 text-right font-bold text-amber-900">${rev} ฿</td>` : ''}`;
+                        tbody.appendChild(tr);
+                    }
+                });
+            }
+
+            renderWeeklyMatrix(weekDates, weeklyConfirmed);
+        }
+
+        function renderWeeklyMatrix(weekDates, weeklyConfirmed) {
+            const headerTr = document.getElementById('weekly-matrix-header');
+            const matrixTbody = document.getElementById('weekly-matrix-tbody');
+            if (!headerTr || !matrixTbody) return;
+
+            headerTr.innerHTML = '<th class="p-2 border border-gray-700 w-24">เวลา</th>';
+            const daysName = ['จันทร์', 'อังคาร', 'พุธ', 'พฤหัสฯ', 'ศุกร์', 'เสาร์', 'อาทิตย์'];
+
+            weekDates.forEach((dStr, idx) => {
+                const parts = dStr.split('-');
+                headerTr.innerHTML += `<th class="p-2 border border-gray-700 min-w-[110px]">${daysName[idx]}<br><span class="text-[10px] font-normal text-amber-300">${parts[2]}/${parts[1]}</span></th>`;
+            });
+
+            matrixTbody.innerHTML = '';
+            const hourlySlots = getGeneratedHourlySlots();
+            const skipMap = {};
+
+            hourlySlots.forEach((slotStr, hIdx) => {
+                const sHour = parseInt(slotStr.split(':')[0]);
+                const tr = document.createElement('tr');
+                tr.innerHTML = `<td class="p-2 border font-bold text-center bg-gray-50 text-gray-700 text-xs">${slotStr.split(' - ')[0]}</td>`;
+
+                weekDates.forEach((dStr, dIdx) => {
+                    if (!skipMap[dIdx]) skipMap[dIdx] = {};
+                    if (skipMap[dIdx][sHour]) return; 
+
+                    const matchedBooking = weeklyConfirmed.find(b => {
+                        if (b.date !== dStr) return false;
+                        const bStart = parseInt(b.timeSlot.split(':')[0]);
+                        return bStart === sHour;
                     });
 
-                    const totalCount = matchedBookings.length;
-                    const totalHours = matchedBookings.reduce((sum, b) => sum + (b.bookingDuration || 1), 0);
-                    const totalRevenue = matchedBookings.reduce((sum, b) => sum + (b.totalPrice || 0), 0);
+                    const isClosed = adminClosedSlots[`${dStr}_${slotStr}`];
 
-                    const tr = document.createElement('tr');
-                    tr.className = "hover:bg-gray-50 transition-all";
-                    
-                    const revCell = (userRole === 'coach') ? '' : `<td class="p-3 text-right font-bold text-amber-900">${totalRevenue} ฿</td>`;
-                    
-                    tr.innerHTML = `
-                        <td class="p-3 font-bold text-gray-900">${cat.label}</td>
-                        <td class="p-3 text-center text-gray-700">${totalCount} คิว</td>
-                        <td class="p-3 text-center text-emerald-800 font-bold">${totalHours} ชม.</td>
-                        ${revCell}`;
-                    breakdownTbody.appendChild(tr);
-                });
-            }
-
-            const matrixHeader = document.getElementById('weekly-matrix-header');
-            const matrixTbody = document.getElementById('weekly-matrix-tbody');
-            const daysTh = ['จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์', 'อาทิตย์'];
-
-            if (matrixHeader) {
-                matrixHeader.innerHTML = `<th class="p-3 w-28 border border-gray-800 bg-[#1A1A1A]">ช่วงเวลา</th>`;
-                weekDates.forEach((dateStr, idx) => {
-                    const parts = dateStr.split('-');
-                    const dateFormatted = `${parseInt(parts[2])}/${parseInt(parts[1])}`;
-                    matrixHeader.innerHTML += `
-                        <th class="p-3 border border-gray-800 bg-[#1A1A1A] min-w-[130px]">
-                            ${daysTh[idx]}<br>
-                            <span class="text-[11px] font-mono text-[#B39250] font-normal">${dateFormatted}</span>
-                        </th>`;
-                });
-            }
-
-            if (matrixTbody) {
-                matrixTbody.innerHTML = '';
-                const hourlySlots = getGeneratedHourlySlots();
-                const skipCell = Array(hourlySlots.length).fill(null).map(() => Array(weekDates.length).fill(false));
-
-                hourlySlots.forEach((slotStr, rIdx) => {
-                    const tr = document.createElement('tr');
-                    tr.className = "hover:bg-amber-50/20 transition-colors";
-                    tr.innerHTML = `<td class="p-2.5 font-mono font-bold text-center bg-gray-50 text-gray-800 border border-gray-200 text-xs">${slotStr.split(' - ')[0]}</td>`;
-
-                    weekDates.forEach((dateStr, cIdx) => {
-                        if (skipCell[rIdx][cIdx]) return;
-
-                        const cellTd = document.createElement('td');
-                        cellTd.className = "p-1.5 border border-gray-200 align-top text-center";
-
-                        const closureKey = `${dateStr}_${slotStr}`;
-                        const isBlocked = !!adminClosedSlots[closureKey];
-
-                        const matchedBooking = bookings.find(b => {
-                            if (b.date !== dateStr || b.status === 'rejected') return false;
-                            const bSubSlots = getSubHourlySlots(b.timeSlot);
-                            return bSubSlots.includes(slotStr);
-                        });
-
-                        if (matchedBooking) {
-                            const bSubSlots = getSubHourlySlots(matchedBooking.timeSlot);
-                            const matchingRowIndices = [];
-                            for (let i = rIdx; i < hourlySlots.length; i++) {
-                                if (bSubSlots.includes(hourlySlots[i])) {
-                                    matchingRowIndices.push(i);
-                                }
-                            }
-
-                            const spanCount = matchingRowIndices.length || 1;
-                            if (spanCount > 1) {
-                                cellTd.setAttribute('rowspan', spanCount);
-                                matchingRowIndices.forEach(idx => {
-                                    if (idx > rIdx) skipCell[idx][cIdx] = true;
-                                });
-                            }
-
-                            const isPending = matchedBooking.status === 'pending';
-                            const badgeBg = isPending ? 'bg-amber-100 border-amber-300 text-amber-900 cursor-pointer hover:bg-amber-200' : 'bg-emerald-50 border-emerald-300 text-emerald-900';
-                            
-                            if (isPending) {
-                                cellTd.onclick = () => openApprovalModal(matchedBooking.bookingId);
-                            }
-
-                            let typeText = '🎾 จองสนาม';
-                            if (matchedBooking.bookingType === 'court_and_coach' && matchedBooking.coachName) {
-                                typeText = `👨‍🏫 ${matchedBooking.coachName}`;
-                            } else if (matchedBooking.bookingType === 'court_and_knocker') {
-                                typeText = '🏸 น็อคเกอร์';
-                            } else if (matchedBooking.bookingType === 'court_and_ballmachine') {
-                                typeText = '🤖 เครื่องยิงบอล';
-                            }
-
-                            const priceHtml = (userRole === 'coach') ? '' : `<p class="font-bold text-emerald-800 text-xs sm:text-sm mt-1 text-right border-t border-emerald-200/60 pt-1">รวม ${matchedBooking.totalPrice || 0} ฿</p>`;
-
-                            cellTd.innerHTML = `
-                                <div class="p-2.5 rounded-2xl border ${badgeBg} shadow-xs text-left h-full flex flex-col justify-between space-y-1">
-                                    <div>
-                                        <div class="flex items-center justify-between gap-1 border-b border-black/10 pb-1 mb-1">
-                                            <span class="font-bold truncate text-[11px] sm:text-xs">${typeText}</span>
-                                            ${isPending ? '<span class="text-[9px] bg-amber-200 text-amber-900 px-1.5 py-0.5 rounded-full font-bold shrink-0 animate-pulse">รออนุมัติ</span>' : ''}
-                                        </div>
-                                        <p class="font-bold text-gray-900 text-xs sm:text-sm truncate" title="${matchedBooking.bookedBy}">${matchedBooking.bookedBy}</p>
-                                        <p class="text-[10px] sm:text-xs text-gray-600 font-mono">${matchedBooking.customerPhone || ''}</p>
-                                        <p class="text-[10px] text-gray-500 font-light mt-1">🕒 ${matchedBooking.timeSlot} น. (${matchedBooking.bookingDuration || spanCount} ชม.)</p>
-                                    </div>
-                                    ${priceHtml}
-                                </div>`;
-                        } else if (isBlocked) {
-                            const reason = adminClosedSlots[closureKey].reason || 'ปิดสนาม';
-                            cellTd.innerHTML = `
-                                <div class="p-2 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 h-full flex items-center justify-center text-center">
-                                    <span class="text-[10px] font-bold block" title="${reason}">🔒 ${reason}</span>
-                                </div>`;
-                        } else {
-                            cellTd.innerHTML = `<span class="text-[10px] text-emerald-600 font-semibold block pt-3">🟢 ว่าง</span>`;
+                    if (matchedBooking) {
+                        const dur = matchedBooking.bookingDuration || 1;
+                        for (let dh = 1; dh < dur; dh++) {
+                            skipMap[dIdx][sHour + dh] = true;
                         }
 
-                        tr.appendChild(cellTd);
-                    });
+                        const td = document.createElement('td');
+                        td.rowSpan = dur;
+                        td.className = "p-2 border border-[#B39250] bg-amber-50 text-amber-950 text-center font-bold text-xs shadow-xs align-middle";
+                        td.innerHTML = `
+                            <p class="font-bold text-amber-900">${matchedBooking.bookedBy}</p>
+                            <p class="text-[10px] text-gray-600 font-light">${getBookingTypeDesc(matchedBooking)}</p>
+                            <p class="text-[10px] text-emerald-800 font-mono">${matchedBooking.timeSlot}</p>`;
+                        tr.appendChild(td);
+                    } else if (isClosed) {
+                        const td = document.createElement('td');
+                        td.className = "p-2 border border-rose-200 bg-rose-50 text-rose-700 text-center font-light text-[10px] align-middle";
+                        td.innerText = `🔒 ${isClosed.reason || 'ปิดสนาม'}`;
+                        tr.appendChild(td);
+                    } else {
+                        const td = document.createElement('td');
+                        td.className = "p-2 border border-gray-100 bg-white text-center text-gray-300 text-[10px] align-middle";
+                        td.innerText = "🟢 ว่าง";
+                        tr.appendChild(td);
+                    }
+                });
 
-                    matrixTbody.appendChild(tr);
+                matrixTbody.appendChild(tr);
+            });
+        }
+
+        // --- 4. APP INITIALIZATION & FIREBASE LISTENERS ---
+        window.onload = function() {
+            initSession();
+
+            if (useFirebase && db) {
+                db.collection("bookings").onSnapshot((snapshot) => {
+                    const loaded = []; snapshot.forEach(doc => loaded.push(doc.data()));
+                    bookings = loaded; safeSetStorage('gallery_bookings', bookings);
+                    renderAdminDashboard(); renderCoachView(); renderWeeklyDashboard();
+                });
+                db.collection("admin_closed_slots").onSnapshot((snapshot) => {
+                    const loaded = {}; snapshot.forEach(doc => loaded[doc.id] = doc.data());
+                    adminClosedSlots = loaded; safeSetStorage('gallery_admin_closed_slots', adminClosedSlots);
+                    renderAdminCourtClosure(); renderWeeklyDashboard();
+                });
+                db.collection("coach_availability").onSnapshot((snapshot) => {
+                    const loaded = {}; snapshot.forEach(doc => loaded[doc.id] = doc.data().slots || {});
+                    coachCustomAvailability = loaded; safeSetStorage('gallery_coach_availability', coachCustomAvailability);
+                    renderCoachView();
+                });
+                db.collection("settings").doc("court_operating_hours").onSnapshot((doc) => {
+                    if (doc.exists) {
+                        courtOperatingHours = doc.data();
+                        safeSetStorage('gallery_court_operating_hours', courtOperatingHours);
+                        renderAdminCourtClosure(); renderCoachView(); renderWeeklyDashboard();
+                    }
                 });
             }
-        }
+        };
     </script>
 </body>
 </html>
