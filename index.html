@@ -377,6 +377,11 @@
                 <span class="text-[#B39250] font-serif-custom font-bold text-base tracking-widest block">THE GALLERY TENNIS HOUSE</span>
                 <h2 class="font-bold text-emerald-800 text-lg sm:text-xl">การจองได้รับอนุมัติเรียบร้อยแล้ว!</h2>
                 <p class="text-xs text-gray-500 font-light">ขอบพระคุณที่ใช้บริการ The Gallery House</p>
+                
+                <!-- เพิ่มข้อความแจ้งเตือนให้ Capture หน้าจอ -->
+                <div class="mt-3 bg-rose-50 border border-rose-200 rounded-xl p-3 shadow-sm animate-pulse">
+                    <p class="text-sm font-bold text-rose-600">📸 ยืนยันการจอง กรุณา Capture หน้าจอเพื่อแสดงต่อเจ้าหน้าที่</p>
+                </div>
             </div>
 
             <div class="bg-white rounded-2xl border border-emerald-300 p-4 sm:p-5 space-y-3 shadow-md text-sm sm:text-base relative overflow-hidden">
@@ -536,6 +541,7 @@
         let selectedTime = null;
         let lineProfile = { userId: '', displayName: '' };
         let pendingSlipBase64 = null;
+        let currentPendingBookingId = null; // เพิ่มตัวแปรเก็บ ID คิวที่กำลังรออนุมัติ
 
         let timerInterval = null;
         let paymentCountdown = 600;
@@ -719,14 +725,13 @@
                         return bSubSlots.includes(subSlot);
                     });
                     if (!isCoachAvail || isCoachBooked) {
-                        return { available: false, reason: 'โค้ชไม่สะดวก/ติดคิว' };
+                        return { available: false, reason: 'โค้ชไม่สะดวก/ติดคิวสอนช่วงเวลานี้' };
                     }
                 }
             }
             return { available: true };
         }
 
-        // ✅ แก้ไข: ย้ายสถานะ ว่าง/ไม่ว่าง มาอยู่หน้าสุดของข้อความใน Dropdown เรียบร้อย 100%
         function renderTimeSlots() {
             const select = document.getElementById('time-slot-dropdown');
             if (!select) return;
@@ -751,14 +756,12 @@
                 const hourlyTotalPrice = courtRate + coachFeePerHour + serviceExtraRate;
                 const totalPrice = hourlyTotalPrice * bookingDuration;
 
-                // ✅ จัดรูปแบบให้ "🟢 ว่าง" หรือ "🔴 ไม่ว่าง" อยู่ตำแหน่งแรกสุดของข้อความ
                 if (!status.available) {
-                    option.text = `🔴 ไม่ว่าง [${status.reason}] | ${slotStr} น. (${bookingDuration} ชม.)`;
+                    option.text = `${slotStr} (${bookingDuration} ชม.) - [🔴 ${status.reason}]`;
                     option.disabled = true;
                 } else {
-                    option.text = `🟢 ว่าง | ${slotStr} น. (${bookingDuration} ชม.) - รวม ${totalPrice} ฿`;
+                    option.text = `${slotStr} (${bookingDuration} ชม.) - (🟢 ว่าง) รวม ${totalPrice} บาท`;
                 }
-                
                 if (slotStr === selectedTime) option.selected = true;
                 select.appendChild(option);
             });
@@ -954,6 +957,7 @@
 
             if (useFirebase && db) {
                 db.collection("bookings").doc(bookingId).set(pendingBooking);
+                currentPendingBookingId = bookingId; // บันทึก ID ไว้รอเช็คสถานะ Real-time จาก Admin
             }
 
             document.getElementById('p-booking-id').innerText = bookingId;
@@ -967,6 +971,7 @@
         function resetBooking() {
             stopPaymentTimer();
             pendingSlipBase64 = null;
+            currentPendingBookingId = null;
             const previewContainer = document.getElementById('slip-preview-container');
             if (previewContainer) previewContainer.classList.add('hidden');
             goToStep(1);
@@ -993,7 +998,38 @@
                         const data = doc.data();
                         loaded.push({ ...data, status: data.status || 'confirmed' });
                     });
-                    bookings = loaded; safeSetStorage('gallery_bookings', bookings); renderTimeSlots();
+                    bookings = loaded; 
+                    safeSetStorage('gallery_bookings', bookings); 
+                    renderTimeSlots();
+
+                    // เช็คสถานะการอนุมัติแบบ Real-time
+                    if (currentPendingBookingId) {
+                        const myBooking = bookings.find(b => b.bookingId === currentPendingBookingId);
+                        // ถ้าแอดมินกดอนุมัติ (status เปลี่ยนเป็น confirmed)
+                        if (myBooking && myBooking.status === 'confirmed') {
+                            // อัปเดตข้อมูลหน้า Success (Step 6)
+                            document.getElementById('success-booking-id').innerText = myBooking.bookingId;
+                            document.getElementById('success-type-desc').innerText = getBookingTypeLabel(myBooking.bookingType);
+                            document.getElementById('s-cust').innerText = `${myBooking.bookedBy} (${myBooking.customerPhone})`;
+                            document.getElementById('s-court').innerText = myBooking.courtName || 'Indoor Tennis Court';
+                            
+                            const sCoachRow = document.getElementById('s-coach-row');
+                            if (myBooking.coachName) {
+                                if (sCoachRow) sCoachRow.classList.remove('hidden');
+                                document.getElementById('s-coach').innerText = myBooking.coachName;
+                            } else {
+                                if (sCoachRow) sCoachRow.classList.add('hidden');
+                            }
+                            
+                            document.getElementById('s-datetime').innerText = `${formatDateThai(myBooking.date)} (${myBooking.timeSlot} น.)`;
+                            document.getElementById('s-total').innerText = `${myBooking.totalPrice} ฿`;
+
+                            // พาผู้ใช้ไปยังหน้า 6 (สำเร็จ)
+                            goToStep(6);
+                            currentPendingBookingId = null; // รีเซ็ตค่าเพื่อหยุดเช็ค
+                            showToast('แอดมินอนุมัติสลิปการจองของคุณเรียบร้อยแล้ว!', false);
+                        }
+                    }
                 });
                 db.collection("admin_closed_slots").onSnapshot((snapshot) => {
                     const loaded = {}; snapshot.forEach(doc => loaded[doc.id] = doc.data());
