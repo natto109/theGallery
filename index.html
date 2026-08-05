@@ -725,7 +725,7 @@
                         return bSubSlots.includes(subSlot);
                     });
                     if (!isCoachAvail || isCoachBooked) {
-                        return { available: false, reason: 'โค้ชไม่สะดวก/ติดคิวสอนช่วงเวลานี้' };
+                        return { available: false, reason: 'โค้ชไม่สะดวก/ติดคิวสอน' };
                     }
                 }
             }
@@ -757,11 +757,14 @@
                 const totalPrice = hourlyTotalPrice * bookingDuration;
 
                 if (!status.available) {
-                    option.text = `${slotStr} (${bookingDuration} ชม.) - [🔴 ${status.reason}]`;
+                    // หากไม่ว่าง แก้ข้อความตรงนี้ (เอา 🔴 ไว้หน้าสุด)
+                    option.text = `🔴 ไม่ว่าง [${status.reason}] | ${slotStr} น. (${bookingDuration} ชม.)`;
                     option.disabled = true;
                 } else {
-                    option.text = `${slotStr} (${bookingDuration} ชม.) - (🟢 ว่าง) รวม ${totalPrice} บาท`;
+                    // หากว่าง แก้ข้อความตรงนี้ (เอา 🟢 ไว้หน้าสุด)
+                    option.text = `🟢 ว่าง | ${slotStr} น. (${bookingDuration} ชม.) - รวม ${totalPrice} ฿`;
                 }
+                
                 if (slotStr === selectedTime) option.selected = true;
                 select.appendChild(option);
             });
@@ -957,7 +960,7 @@
 
             if (useFirebase && db) {
                 db.collection("bookings").doc(bookingId).set(pendingBooking);
-                currentPendingBookingId = bookingId; // บันทึก ID ไว้รอเช็คสถานะ Real-time จาก Admin
+                currentPendingBookingId = bookingId; // จำ ID ไว้รอการยืนยันแบบ Real-time
             }
 
             document.getElementById('p-booking-id').innerText = bookingId;
@@ -1002,10 +1005,10 @@
                     safeSetStorage('gallery_bookings', bookings); 
                     renderTimeSlots();
 
-                    // เช็คสถานะการอนุมัติแบบ Real-time
+                    // ✅ ระบบ Real-time: เช็คว่าแอดมินกดอนุมัติคิวที่เรากำลังรออยู่หรือยัง
                     if (currentPendingBookingId) {
                         const myBooking = bookings.find(b => b.bookingId === currentPendingBookingId);
-                        // ถ้าแอดมินกดอนุมัติ (status เปลี่ยนเป็น confirmed)
+                        
                         if (myBooking && myBooking.status === 'confirmed') {
                             // อัปเดตข้อมูลหน้า Success (Step 6)
                             document.getElementById('success-booking-id').innerText = myBooking.bookingId;
@@ -1024,9 +1027,9 @@
                             document.getElementById('s-datetime').innerText = `${formatDateThai(myBooking.date)} (${myBooking.timeSlot} น.)`;
                             document.getElementById('s-total').innerText = `${myBooking.totalPrice} ฿`;
 
-                            // พาผู้ใช้ไปยังหน้า 6 (สำเร็จ)
+                            // เปลี่ยนไป Step 6 แจ้งเตือนลูกค้าให้ Capture หน้าจอ
                             goToStep(6);
-                            currentPendingBookingId = null; // รีเซ็ตค่าเพื่อหยุดเช็ค
+                            currentPendingBookingId = null; // รีเซ็ตการเช็ค
                             showToast('แอดมินอนุมัติสลิปการจองของคุณเรียบร้อยแล้ว!', false);
                         }
                     }
