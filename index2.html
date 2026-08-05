@@ -1,0 +1,1076 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Gallery Tennis House - Customer Booking (LIFF)</title>
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,600;0,700;1,400&display=swap" rel="stylesheet">
+
+    <!-- LINE LIFF SDK -->
+    <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+
+    <!-- Firebase SDKs (Compat Version) -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+
+    <!-- External Firebase Config -->
+    <script src="firebase-config.js"></script>
+
+    <!-- Centralized Coaches Config -->
+    <script src="coaches.js"></script>
+
+    <style>
+        body {
+            font-family: 'Kanit', sans-serif;
+            background-color: #FAF8F5;
+            color: #1A1A1A;
+        }
+        .font-serif-custom {
+            font-family: 'Playfair Display', serif;
+        }
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #B39250;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between max-w-md mx-auto bg-[#FAF8F5] shadow-2xl border-x border-gray-200 font-light">
+
+    <!-- HEADER / BRANDING BANNER -->
+    <header class="bg-[#0D0D0D] text-white pt-4 pb-4 px-4 sticky top-0 z-30 shadow-md border-b border-[#B39250]/20 space-y-3">
+        <!-- BANNER IMAGE & LINE USER BADGE -->
+        <div class="relative rounded-2xl overflow-hidden shadow-sm">
+            <img src="banner.jpg" alt="The Gallery Tennis House Banner" 
+                 class="w-full h-auto object-cover rounded-2xl border border-[#B39250]/40"
+                 onerror="this.onerror=null; this.src='https://placehold.co/800x250/0D0D0D/B39250?text=THE+GALLERY+TENNIS+HOUSE';">
+            
+            <div id="line-user-badge" class="hidden absolute top-2 right-2 inline-flex items-center gap-1.5 bg-[#0D0D0D]/80 backdrop-blur-md px-2.5 py-1 rounded-full border border-emerald-500/50 text-[11px] text-gray-200 shadow-md">
+                <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                <span id="line-user-name" class="font-medium truncate max-w-[90px]">LINE User</span>
+            </div>
+        </div>
+
+        <!-- PROGRESS WIZARD -->
+        <div class="mt-4 pt-3 border-t border-gray-800 flex justify-between text-xs font-semibold text-gray-400">
+            <div id="p-step-1" class="flex items-center gap-1.5 text-[#D4AF37] font-bold">
+                <span class="w-5 h-5 rounded-full flex items-center justify-center text-xs bg-[#B39250] text-black font-bold">1</span>
+                <span>เวลา</span>
+            </div>
+            <div id="p-step-2" class="flex items-center gap-1.5">
+                <span class="w-5 h-5 rounded-full flex items-center justify-center text-xs border border-gray-600">2</span>
+                <span>ข้อมูล</span>
+            </div>
+            <div id="p-step-3" class="flex items-center gap-1.5">
+                <span class="w-5 h-5 rounded-full flex items-center justify-center text-xs border border-gray-600">3</span>
+                <span>สรุป</span>
+            </div>
+            <div id="p-step-4" class="flex items-center gap-1.5">
+                <span class="w-5 h-5 rounded-full flex items-center justify-center text-xs border border-gray-600">4</span>
+                <span>ชำระ</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- MAIN FORM BODY -->
+    <main class="flex-1 p-4 sm:p-5 space-y-5 text-sm font-light">
+
+        <!-- STEP 1: TYPE, COACH, STUDENT COUNT, DATE, DURATION & TIME -->
+        <div id="step-1-content" class="space-y-4">
+            
+            <div id="active-type-badge-row" class="hidden flex justify-end">
+                <span id="active-type-badge-text" class="bg-[#1A1A1A] text-white px-5 py-2 rounded-2xl font-bold text-sm shadow">
+                    เช่าสนาม + โค้ช
+                </span>
+            </div>
+
+            <!-- 1. TYPE SELECTION -->
+            <div class="space-y-2">
+                <label class="block text-gray-900 font-bold text-sm sm:text-base">คุณต้องการอะไรวันนี้?</label>
+                <div class="grid grid-cols-2 gap-3">
+                    <button type="button" onclick="setBookingType('court_only')" id="btn-type-court_only"
+                        class="p-4 rounded-2xl border text-center transition-all bg-[#1A1A1A] text-white border-[#B39250] shadow-md flex flex-col items-center justify-center gap-2 min-h-[110px]">
+                        <div class="w-10 h-10 rounded-full border border-gray-500 flex items-center justify-center">
+                            <svg class="w-6 h-6 stroke-current" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <circle cx="12" cy="12" r="9" stroke-width="1.5"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 3a9 9 0 0 1 0 18M3 12a9 9 0 0 1 18 0"/>
+                            </svg>
+                        </div>
+                        <div class="font-bold text-sm sm:text-base">จองสนาม</div>
+                    </button>
+
+                    <button type="button" onclick="setBookingType('court_and_coach')" id="btn-type-court_and_coach"
+                        class="p-4 rounded-2xl border text-center transition-all bg-white text-gray-800 border-gray-200 hover:border-[#B39250] shadow-sm flex flex-col items-center justify-center gap-2 min-h-[110px]">
+                        <div class="w-10 h-10 flex items-center justify-center text-gray-700">
+                            <svg class="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                            </svg>
+                        </div>
+                        <div class="font-bold text-sm sm:text-base">จองสนาม<br>+ โค้ช</div>
+                    </button>
+
+                    <button type="button" onclick="setBookingType('court_and_knocker')" id="btn-type-court_and_knocker"
+                        class="p-4 rounded-2xl border text-center transition-all bg-white text-gray-800 border-gray-200 hover:border-[#B39250] shadow-sm flex flex-col items-center justify-center gap-2 min-h-[110px]">
+                        <div class="w-10 h-10 flex items-center justify-center text-gray-700">
+                            <svg class="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                            </svg>
+                        </div>
+                        <div class="font-bold text-sm sm:text-base">จองสนาม<br>+ น็อคเกอร์</div>
+                    </button>
+
+                    <button type="button" onclick="setBookingType('court_and_ballmachine')" id="btn-type-court_and_ballmachine"
+                        class="p-4 rounded-2xl border text-center transition-all bg-white text-gray-800 border-gray-200 hover:border-[#B39250] shadow-sm flex flex-col items-center justify-center gap-2 min-h-[110px]">
+                        <div class="w-10 h-10 flex items-center justify-center text-gray-700">
+                            <svg class="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <rect x="5" y="8" width="14" height="11" rx="2" stroke-width="1.5"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5h6M12 5v3M9 12h.01M15 12h.01M12 15h.01" />
+                            </svg>
+                        </div>
+                        <div class="font-bold text-sm sm:text-base">จองสนาม<br>+ เครื่องยิงบอล</div>
+                    </button>
+                </div>
+            </div>
+
+            <!-- 2. COACH SELECTION & STUDENT COUNT (DYNAMIC) -->
+            <div id="coach-selection-section" class="hidden space-y-3.5 bg-amber-50/60 p-4 rounded-3xl border border-amber-200/80">
+                <div class="space-y-3" id="coach-list-container"></div>
+
+                <!-- STUDENT COUNT SELECTOR (MAX 4 STUDENTS) -->
+                <div class="space-y-2 pt-3 border-t border-amber-200/80">
+                    <label class="block text-gray-900 font-bold text-xs sm:text-sm">👥 เลือกจำนวนนักเรียน (สูงสุด 4 คน)</label>
+                    <div class="grid grid-cols-4 gap-2">
+                        <button type="button" onclick="setStudentCount(1)" id="btn-student-1" class="py-2.5 rounded-2xl font-bold text-xs sm:text-sm border border-[#B39250] bg-[#1A1A1A] text-white shadow-xs">1 คน</button>
+                        <button type="button" onclick="setStudentCount(2)" id="btn-student-2" class="py-2.5 rounded-2xl font-bold text-xs sm:text-sm border border-gray-300 bg-white text-gray-800 hover:border-[#B39250]">2 คน</button>
+                        <button type="button" onclick="setStudentCount(3)" id="btn-student-3" class="py-2.5 rounded-2xl font-bold text-xs sm:text-sm border border-gray-300 bg-white text-gray-800 hover:border-[#B39250]">3 คน</button>
+                        <button type="button" onclick="setStudentCount(4)" id="btn-student-4" class="py-2.5 rounded-2xl font-bold text-xs sm:text-sm border border-gray-300 bg-white text-gray-800 hover:border-[#B39250]">4 คน</button>
+                    </div>
+                    <p class="text-[11px] text-amber-900 font-medium">💡 สูตรคิดราคาค่าสอน: (ค่าสอนของโค้ช) × (จำนวนนักเรียน) บาท/ชม.</p>
+                </div>
+            </div>
+
+            <!-- 3. DATE SELECTION WITH AUGUST 31 LIMIT -->
+            <div class="space-y-2">
+                <label class="block text-gray-900 font-bold text-sm sm:text-base">เลือกวันที่ต้องการจอง</label>
+                <div class="relative">
+                    <input type="date" id="booking-date" onchange="onDateChange(this.value)"
+                        class="w-full p-3.5 pr-12 rounded-2xl border border-gray-300 bg-white font-bold text-sm sm:text-base text-gray-900 outline-none focus:border-[#B39250] shadow-sm">
+                    <span class="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-600 text-lg">📅</span>
+                </div>
+                <p class="text-[11px] text-amber-800 font-light mt-1">📌 ขณะนี้เปิดให้จองล่วงหน้าได้ถึงวันที่ 31 สิงหาคม 2569 เท่านั้น</p>
+            </div>
+
+            <!-- 4. DURATION SELECTION -->
+            <div class="space-y-2">
+                <label class="block text-gray-900 font-bold text-sm sm:text-base">เลือกจำนวนชั่วโมง</label>
+                <div class="grid grid-cols-4 gap-2.5">
+                    <button type="button" onclick="setBookingDuration(1)" id="btn-dur-1" class="py-3 rounded-2xl font-bold text-sm sm:text-base border border-[#B39250] bg-[#1A1A1A] text-white shadow-sm">1 ชม.</button>
+                    <button type="button" onclick="setBookingDuration(2)" id="btn-dur-2" class="py-3 rounded-2xl font-bold text-sm sm:text-base border border-gray-200 bg-white text-gray-800 hover:border-[#B39250]">2 ชม.</button>
+                    <button type="button" onclick="setBookingDuration(3)" id="btn-dur-3" class="py-3 rounded-2xl font-bold text-sm sm:text-base border border-gray-200 bg-white text-gray-800 hover:border-[#B39250]">3 ชม.</button>
+                    <button type="button" onclick="setBookingDuration(4)" id="btn-dur-4" class="py-3 rounded-2xl font-bold text-sm sm:text-base border border-gray-200 bg-white text-gray-800 hover:border-[#B39250]">4 ชม.</button>
+                </div>
+            </div>
+
+            <!-- 5. TIME SLOTS DROPDOWN -->
+            <div class="space-y-2">
+                <div class="flex justify-between items-center">
+                    <label class="block text-gray-900 font-bold text-sm sm:text-base">เลือกช่วงเวลาที่ต้องการ</label>
+                    <span id="court-rate-label" class="text-xs text-gray-500 font-light">อัตราสนาม 400 ฿/ชม.</span>
+                </div>
+                <div class="relative">
+                    <select id="time-slot-dropdown" onchange="onTimeSlotSelect(this.value)"
+                        class="w-full p-3.5 pr-10 rounded-2xl border border-gray-300 bg-white font-bold text-sm sm:text-base text-gray-900 outline-none focus:border-[#B39250] shadow-sm appearance-none">
+                    </select>
+                    <div class="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-500 font-bold text-xs">▼</div>
+                </div>
+            </div>
+
+            <button onclick="goToStep(2)" class="w-full py-4 bg-[#1A1A1A] hover:bg-[#333] text-white rounded-2xl font-bold text-base transition-all shadow-md mt-4 flex items-center justify-center gap-2">
+                <span>ถัดไป: กรอกข้อมูลผู้จอง</span>
+                <span>➔</span>
+            </button>
+        </div>
+
+        <!-- STEP 2: CUSTOMER INFORMATION -->
+        <div id="step-2-content" class="hidden space-y-4">
+            <div class="text-center py-1">
+                <span class="text-[#B39250] font-serif-custom font-bold text-base tracking-widest block">THE GALLERY</span>
+                <span class="text-xs text-gray-500 tracking-wider uppercase block font-light">กรอกข้อมูลผู้จองสนาม</span>
+            </div>
+
+            <div class="bg-white p-4 sm:p-5 rounded-2xl border border-gray-200 shadow-sm space-y-3.5">
+                <div>
+                    <label class="block text-gray-700 text-xs sm:text-sm font-bold mb-1">ชื่อ - นามสกุลผู้จอง *</label>
+                    <input type="text" id="cust-name" placeholder="ระบุชื่อ-นามสกุล" class="w-full p-3 border border-gray-300 rounded-xl text-sm sm:text-base font-light outline-none focus:border-[#B39250]">
+                </div>
+                <div>
+                    <label class="block text-gray-700 text-xs sm:text-sm font-bold mb-1">เบอร์โทรศัพท์ติดต่อ *</label>
+                    <input type="tel" id="cust-phone" placeholder="08X-XXX-XXXX" class="w-full p-3 border border-gray-300 rounded-xl text-sm sm:text-base font-mono outline-none focus:border-[#B39250]">
+                </div>
+                <div>
+                    <label class="block text-gray-700 text-xs sm:text-sm font-bold mb-1">ระดับทักษะการเล่น</label>
+                    <select id="cust-skill" class="w-full p-3 border border-gray-300 rounded-xl text-sm sm:text-base font-light outline-none bg-white">
+                        <option value="Beginner">เริ่มต้น (Beginner)</option>
+                        <option value="Intermediate" selected>ปานกลาง (Intermediate)</option>
+                        <option value="Advanced">มืออาชีพ (Advanced)</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-gray-700 text-xs sm:text-sm font-bold mb-1">หมายเหตุ / สิ่งที่ต้องการเน้น</label>
+                    <textarea id="cust-note" rows="2" class="w-full p-3 border border-gray-300 rounded-xl text-sm sm:text-base font-light outline-none focus:border-[#B39250]" placeholder="ระบุเพิ่มเติม เช่น เน้นสอนลูก FH / Serve"></textarea>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+                <button onclick="goToStep(1)" class="py-3 border border-gray-300 text-gray-700 rounded-2xl font-bold text-sm sm:text-base bg-white">ย้อนกลับ</button>
+                <button onclick="goToStep(3)" class="py-3 bg-[#1A1A1A] text-white rounded-2xl font-bold text-sm sm:text-base shadow-md">ถัดไป: สรุปการจอง</button>
+            </div>
+        </div>
+
+        <!-- STEP 3: REVIEW SUMMARY -->
+        <div id="step-3-content" class="hidden space-y-4">
+            <div id="summary-badge-row" class="flex justify-end">
+                <span id="summary-badge-tag" class="bg-[#1A1A1A] text-white px-5 py-2 rounded-2xl font-bold text-sm shadow">เช่าสนาม + โค้ช</span>
+            </div>
+
+            <div class="text-center py-1">
+                <span class="text-[#B39250] font-serif-custom font-bold text-base tracking-widest block">THE GALLERY</span>
+                <h2 class="font-bold text-gray-900 text-lg sm:text-xl">สรุปรายละเอียดการจอง</h2>
+            </div>
+
+            <div class="bg-white rounded-2xl border border-gray-200 p-4 sm:p-5 space-y-3.5 shadow-sm text-sm sm:text-base">
+                <div class="flex justify-between items-center pb-2.5 border-b border-gray-100">
+                    <span class="text-gray-900 font-bold">ประเภทการจอง:</span>
+                    <span id="summary-booking-type" class="font-bold text-[#B39250]">เช่าสนาม + เรียนกับโค้ช</span>
+                </div>
+                <div class="flex justify-between items-center pb-2.5 border-b border-gray-100">
+                    <span class="text-gray-900 font-bold">สนาม:</span>
+                    <span class="font-bold text-gray-900">Indoor Tennis Court</span>
+                </div>
+                <div id="summary-coach-row" class="hidden flex justify-between items-start pb-2.5 border-b border-gray-100">
+                    <span class="text-gray-900 font-bold shrink-0">โค้ชผู้สอน:</span>
+                    <span id="summary-coach-name" class="font-bold text-emerald-700 text-right">-</span>
+                </div>
+                <div class="flex justify-between items-center pb-2.5 border-b border-gray-100">
+                    <span class="text-gray-900 font-bold">วันที่:</span>
+                    <span id="summary-date" class="font-bold text-gray-900">-</span>
+                </div>
+                <div class="flex justify-between items-center pb-2.5 border-b border-gray-100">
+                    <span class="text-gray-900 font-bold">เวลา:</span>
+                    <span id="summary-time" class="font-bold text-gray-900">-</span>
+                </div>
+                <div class="flex justify-between items-center pb-2.5 border-b border-gray-100">
+                    <span class="text-gray-900 font-bold">ผู้จอง:</span>
+                    <span id="summary-customer" class="font-bold text-gray-900">-</span>
+                </div>
+                <div class="flex justify-between items-center pt-1 font-bold text-base sm:text-lg">
+                    <span class="text-gray-900 font-bold">ราคารวมสุทธิ:</span>
+                    <span id="summary-total-price" class="text-[#B39250] text-xl font-bold">0 บาท</span>
+                </div>
+            </div>
+
+            <div class="bg-amber-50/80 p-3 rounded-2xl border border-amber-200 text-xs sm:text-sm text-amber-900 text-center font-bold">
+                เมื่อชำระเงินแล้ว ไม่สามารถยกเลิกหรือคืนเงินได้ทุกกรณี
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+                <button onclick="goToStep(2)" class="py-3.5 border border-gray-300 text-gray-700 rounded-2xl font-bold text-sm sm:text-base bg-white">ย้อนกลับ</button>
+                <button onclick="goToStep(4)" class="py-3.5 bg-[#1A1A1A] text-white rounded-2xl font-bold text-sm sm:text-base shadow-md">ยืนยันเพื่อชำระเงิน</button>
+            </div>
+        </div>
+
+        <!-- STEP 4: PAYMENT SCREEN WITH AUTOMATIC IMAGE COMPRESSION -->
+        <div id="step-4-content" class="hidden space-y-4">
+
+            <!-- LARGE ENLARGED QR CODE CONTAINER -->
+            <div class="text-center space-y-3 pt-1">
+                <div class="p-2 border border-gray-200 bg-white rounded-3xl shadow-sm inline-block w-full max-w-[340px] mx-auto">
+                    <img src="qr.jpg" id="qr-image" alt="PromptPay QR Code" class="w-full h-auto object-contain mx-auto rounded-2xl"
+                         onerror="this.src='https://placehold.co/320x380/1A1A1A/B39250?text=PROMPTPAY+QR';">
+                </div>
+
+                <div>
+                    <span class="text-gray-500 text-xs block font-light">ยอดชำระสุทธิ:</span>
+                    <span id="payment-amount" class="font-bold text-2xl sm:text-3xl text-gray-900">400.00 ฿</span>
+                </div>
+
+                <!-- SLIP ATTACHMENT SECTION -->
+                <div class="bg-amber-50/80 p-3.5 rounded-2xl border border-amber-200 text-left space-y-2 max-w-[340px] mx-auto">
+                    <label class="block text-xs font-bold text-amber-950">📸 แนบหลักฐานการโอนเงิน (สลิป) *</label>
+                    <input type="file" id="slip-file-input" accept="image/*" onchange="handleSlipSelected(event)"
+                        class="w-full text-xs text-gray-700 file:mr-2 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-[#1A1A1A] file:text-white hover:file:bg-[#333] cursor-pointer font-light">
+                    <div id="slip-preview-container" class="hidden mt-2 text-center">
+                        <p class="text-[11px] text-emerald-700 font-bold mb-1">✓ เลือกสลิปเรียบร้อยแล้ว (บีบอัดภาพเพื่อส่งสปีดด่วน):</p>
+                        <img id="slip-preview-img" class="h-32 mx-auto rounded-xl border-2 border-emerald-400 object-contain shadow-xs bg-white" src="" alt="Slip Preview">
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-amber-50 p-3 rounded-2xl border border-amber-200 text-center text-xs sm:text-sm text-amber-900 font-mono font-bold max-w-[340px] mx-auto">
+                ⏱️ กรุณาชำระภายใน: <span id="payment-timer" class="text-base text-amber-800">09:59</span> นาที
+            </div>
+
+            <button onclick="submitPendingPayment()" class="w-full py-4 bg-[#B39250] hover:bg-[#8E6D31] text-white rounded-2xl font-bold text-base transition-all shadow-md">
+                ✓ แจ้งชำระเงินเรียบร้อย (ส่งแนบสลิป)
+            </button>
+        </div>
+
+        <!-- STEP 5: PENDING APPROVAL SCREEN -->
+        <div id="step-5-pending" class="hidden space-y-5 py-4">
+            <div class="text-center space-y-2">
+                <div class="relative w-16 h-16 mx-auto">
+                    <div class="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center text-amber-600 font-bold text-3xl shadow-inner">
+                        ⏳
+                    </div>
+                    <span class="absolute -top-1 -right-1 flex h-4 w-4">
+                      <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                      <span class="relative inline-flex rounded-full h-4 w-4 bg-amber-500"></span>
+                    </span>
+                </div>
+                <span class="text-[#B39250] font-serif-custom font-bold text-base tracking-widest block">THE GALLERY</span>
+                <h2 class="font-bold text-gray-900 text-lg sm:text-xl">กำลังรอแอดมินตรวจสอบยอดเงิน</h2>
+                <p class="text-xs sm:text-sm text-gray-600 max-w-xs mx-auto font-light">
+                    ระบบได้รับแจ้งชำระเงินแล้ว เจ้าหน้าที่กำลังตรวจสอบยอดโอน กรุณารอสักครู่ (หน้านี้จะอัปเดตให้อัตโนมัติ)
+                </p>
+            </div>
+
+            <div class="bg-white rounded-2xl border border-amber-200 p-4 sm:p-5 space-y-3 shadow-sm text-xs sm:text-sm">
+                <div class="flex justify-between items-center pb-2 border-b border-gray-100">
+                    <span class="text-gray-500 font-light">รหัสจองชั่วคราว:</span>
+                    <span id="p-booking-id" class="font-bold text-amber-800 font-mono text-base">GLY-XXXXXX</span>
+                </div>
+                <div class="flex justify-between items-center pb-2 border-b border-gray-100">
+                    <span class="text-gray-500 font-light">สถานะ:</span>
+                    <span class="bg-amber-100 text-amber-900 font-bold px-3 py-1 rounded-full text-xs animate-pulse">⏳ รอแอดมินตรวจสอบสลิป</span>
+                </div>
+                <div class="flex justify-between items-center pb-2 border-b border-gray-100">
+                    <span class="text-gray-500 font-light">วันและเวลา:</span>
+                    <span id="p-datetime" class="font-bold text-gray-800">-</span>
+                </div>
+                <div class="flex justify-between items-center pt-1 font-bold text-sm sm:text-base">
+                    <span class="text-gray-900">ยอดที่แจ้งโอน:</span>
+                    <span id="p-total" class="text-amber-800 font-bold text-base">400 ฿</span>
+                </div>
+            </div>
+
+            <div class="bg-blue-50 p-3.5 rounded-2xl border border-blue-200 text-xs text-blue-900 flex items-start gap-2 font-light">
+                <span class="text-base">💡</span>
+                <span>ระบบจะส่งข้อความแจ้งเตือนยืนยันเข้า LINE OA ของท่านทันทีเมื่อแอดมินกดยืนยันยอดเงินสำเร็จ</span>
+            </div>
+        </div>
+
+        <!-- STEP 6: CONFIRMED SUCCESS SCREEN -->
+        <div id="step-6-success" class="hidden space-y-4 py-2">
+            <div class="text-center py-2">
+                <div class="w-14 h-14 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-2 text-emerald-600 font-bold text-3xl shadow-md">
+                    ✓
+                </div>
+                <span class="text-[#B39250] font-serif-custom font-bold text-base tracking-widest block">THE GALLERY TENNIS HOUSE</span>
+                <h2 class="font-bold text-emerald-800 text-lg sm:text-xl">การจองได้รับอนุมัติเรียบร้อยแล้ว!</h2>
+                <p class="text-xs text-gray-500 font-light">ขอบพระคุณที่ใช้บริการ The Gallery House</p>
+                
+                <!-- เพิ่มข้อความแจ้งเตือนให้ Capture หน้าจอ -->
+                <div class="mt-3 bg-rose-50 border border-rose-200 rounded-xl p-3 shadow-sm animate-pulse">
+                    <p class="text-sm font-bold text-rose-600">📸 ยืนยันการจอง กรุณา Capture หน้าจอเพื่อแสดงต่อเจ้าหน้าที่</p>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-2xl border border-emerald-300 p-4 sm:p-5 space-y-3 shadow-md text-sm sm:text-base relative overflow-hidden">
+                <div class="bg-emerald-500 text-white text-[11px] font-bold py-1 px-4 text-center -mx-5 -mt-5 mb-3 uppercase tracking-wider">
+                    BOOKING CONFIRMED &amp; APPROVED
+                </div>
+                <div class="flex justify-between items-center pb-2.5 border-b border-gray-100">
+                    <span class="text-gray-500 font-light">รหัสอ้างอิงการจอง:</span>
+                    <span id="success-booking-id" class="font-bold text-[#B39250] font-mono text-base sm:text-lg">GLY-888999</span>
+                </div>
+                <div class="flex justify-between items-center pb-2.5 border-b border-gray-100">
+                    <span class="text-gray-500 font-light">ประเภทการจอง:</span>
+                    <span id="success-type-desc" class="font-bold text-gray-800">เช่าสนามอย่างเดียว</span>
+                </div>
+                <div class="flex justify-between items-center pb-2.5 border-b border-gray-100">
+                    <span class="text-gray-500 font-light">ผู้จอง:</span>
+                    <span id="s-cust" class="font-bold text-gray-800">-</span>
+                </div>
+                <div class="flex justify-between items-center pb-2.5 border-b border-gray-100">
+                    <span class="text-gray-500 font-light">สนาม:</span>
+                    <span id="s-court" class="font-bold text-gray-800">Indoor Tennis Court</span>
+                </div>
+                <div id="s-coach-row" class="hidden flex justify-between items-center pb-2.5 border-b border-gray-100">
+                    <span class="text-gray-500 font-light">โค้ชผู้สอน:</span>
+                    <span id="s-coach" class="font-bold text-emerald-700">-</span>
+                </div>
+                <div class="flex justify-between items-center pb-2.5 border-b border-gray-100">
+                    <span class="text-gray-500 font-light">วันและเวลาเล่น:</span>
+                    <span id="s-datetime" class="font-bold text-gray-800">-</span>
+                </div>
+                <div class="flex justify-between items-center pt-1 font-bold text-base sm:text-lg">
+                    <span class="text-gray-900">ชำระแล้วรวม:</span>
+                    <span id="s-total" class="text-emerald-700 font-bold text-xl">400 ฿</span>
+                </div>
+            </div>
+
+            <button onclick="resetBooking()" class="w-full py-3.5 bg-[#1A1A1A] text-white rounded-2xl font-bold text-base shadow-md hover:bg-[#333] transition-all">
+                ทำการจองใหม่อีกครั้ง
+            </button>
+        </div>
+
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="p-3.5 text-center text-gray-500 text-xs border-t border-gray-200 bg-white font-light">
+        © The Gallery Tennis House (LIFF Booking System)
+    </footer>
+
+    <!-- Toast Notification -->
+    <div id="toast-bg" class="hidden fixed top-5 left-1/2 transform -translate-x-1/2 z-50 flex items-center gap-2.5 bg-[#1A1A1A] text-white px-6 py-3.5 rounded-full shadow-2xl border border-[#B39250] text-sm font-light">
+        <span id="toast-dot" class="w-3 h-3 rounded-full bg-emerald-500"></span>
+        <span id="toast-msg">ข้อความแจ้งเตือน</span>
+    </div>
+
+    <!-- APPLICATION LOGIC -->
+    <script>
+        // --- 1. UTILITY FUNCTIONS DECLARED FIRST TO AVOID REFERENCE ERRORS ---
+        function safeGetStorage(key, fallback) {
+            try {
+                const data = localStorage.getItem(key);
+                return data ? JSON.parse(data) : fallback;
+            } catch (e) { return fallback; }
+        }
+
+        function safeSetStorage(key, value) {
+            try { localStorage.setItem(key, JSON.stringify(value)); } catch (e) {}
+        }
+
+        function getTodayStr() {
+            const d = new Date();
+            const yyyy = d.getFullYear();
+            const mm = String(d.getMonth() + 1).padStart(2, '0');
+            const dd = String(d.getDate()).padStart(2, '0');
+            return `${yyyy}-${mm}-${dd}`;
+        }
+
+        function formatDateThai(dateStr) {
+            if (!dateStr) return '';
+            const parts = dateStr.split('-');
+            if (parts.length < 3) return dateStr;
+            const d = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+            const months = ["ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."];
+            return `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear() + 543}`;
+        }
+
+        function getCourtHourlyRate(dateStr) {
+            const settings = safeGetStorage('gallery_settings', { rateWeekday: 400, rateWeekend: 500 });
+            if (!dateStr) return settings.rateWeekday || 400;
+            const parts = dateStr.split('-');
+            if (parts.length < 3) return settings.rateWeekday || 400;
+            const d = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+            const day = d.getDay();
+            return (day === 0 || day === 6) ? (settings.rateWeekend || 500) : (settings.rateWeekday || 400);
+        }
+
+        function getBookingTypeLabel(type) {
+            switch(type) {
+                case 'court_and_coach': return 'เช่าสนาม + เรียนกับโค้ช';
+                case 'court_and_knocker': return 'เช่าสนาม + น็อคเกอร์';
+                case 'court_and_ballmachine': return 'เช่าสนาม + เครื่องยิงบอล';
+                default: return 'เช่าสนามอย่างเดียว';
+            }
+        }
+
+        function showToast(msg, isError = false) {
+            const toast = document.getElementById('toast-bg');
+            if (!toast) return;
+            document.getElementById('toast-dot').className = isError ? 'w-3 h-3 rounded-full bg-red-500' : 'w-3 h-3 rounded-full bg-emerald-500';
+            document.getElementById('toast-msg').innerText = msg;
+            toast.classList.remove('hidden');
+            setTimeout(() => toast.classList.add('hidden'), 3500);
+        }
+
+        // --- 2. GLOBAL CONSTANTS AND STATE VARIABLES ---
+        const firebaseConfig = window.firebaseConfig || { apiKey: "YOUR_API_KEY" };
+        let db = null;
+        let useFirebase = false;
+
+        try {
+            if (typeof firebase !== 'undefined' && firebaseConfig.apiKey && firebaseConfig.apiKey !== "YOUR_API_KEY") {
+                firebase.initializeApp(firebaseConfig);
+                db = firebase.firestore();
+                useFirebase = true;
+            }
+        } catch (e) {}
+
+        const SINGLE_COURT = { id: 'tennis_indoor', name: 'Indoor Tennis Court' };
+        let courtOperatingHours = safeGetStorage('gallery_court_operating_hours', { startHour: 6, endHour: 22 });
+
+        // Load Central Coaches list directly from coaches.js
+        function getActiveCoaches() {
+            const centralList = (typeof window.COACHES_DATA !== 'undefined' && window.COACHES_DATA.length > 0) 
+                ? window.COACHES_DATA 
+                : [
+                    { id: 'coach1', name: 'Coach Gun', price: 1700, active: true, availableDays: [0,1,2,3,4,5,6], avatar: 'coach1.png', daysText: 'สอนทุกวัน จันทร์ - อาทิตย์', desc: 'สอนทุกระดับ ตั้งแต่พื้นฐานถึงระดับสูง', studentText: 'รับนักเรียน : เดี่ยว / กลุ่ม (1-4 คน)' },
+                    { id: 'coach2', name: 'Coach Nok', price: 800, active: true, availableDays: [2,3,4], avatar: 'coach2.png', daysText: 'สอนวัน อังคาร - พุธ - พฤหัสบดี', desc: 'สอนทุกระดับ ตั้งแต่พื้นฐานถึงระดับสูง', studentText: 'รับนักเรียน : เดี่ยว / กลุ่ม (1-4 คน)' },
+                    { id: 'coach3', name: 'Coach To', price: 600, active: true, availableDays: [5,6,0], avatar: 'coach3.png', daysText: 'สอนวัน ศุกร์ - เสาร์ - อาทิตย์', desc: 'สอนทุกระดับ ตั้งแต่พื้นฐานถึงระดับสูง', studentText: 'รับนักเรียน : เดี่ยว / กลุ่ม (1-5 คน)' }
+                ];
+
+            const settings = safeGetStorage('gallery_settings', null);
+            if (!settings || !settings.coaches) {
+                return centralList.filter(c => c.active !== false);
+            }
+
+            // Merge price and active status from admin settings while using text from coaches.js
+            return centralList.map(c => {
+                const settingMatch = settings.coaches.find(sc => sc.id === c.id || sc.name === c.name);
+                return settingMatch ? { ...c, price: settingMatch.price, active: settingMatch.active } : c;
+            }).filter(c => c.active !== false);
+        }
+
+        let bookingType = 'court_only';
+        let studentCount = 1;
+        let bookingDuration = 1;
+        let selectedCoach = null;
+        let selectedDate = getTodayStr();
+        let selectedTime = null;
+        let lineProfile = { userId: '', displayName: '' };
+        let pendingSlipBase64 = null;
+        let currentPendingBookingId = null; // เพิ่มตัวแปรเก็บ ID คิวที่กำลังรออนุมัติ
+
+        let timerInterval = null;
+        let paymentCountdown = 600;
+
+        let bookings = safeGetStorage('gallery_bookings', []);
+        let adminClosedSlots = safeGetStorage('gallery_admin_closed_slots', {});
+        let coachCustomAvailability = safeGetStorage('gallery_coach_availability', {});
+
+        function setBookingType(type) {
+            bookingType = type;
+            const types = ['court_only', 'court_and_coach', 'court_and_knocker', 'court_and_ballmachine'];
+            const coachSection = document.getElementById('coach-selection-section');
+
+            types.forEach(t => {
+                const btn = document.getElementById(`btn-type-${t}`);
+                if (btn) {
+                    if (t === type) {
+                        btn.className = "p-4 rounded-2xl border text-center transition-all bg-[#1A1A1A] text-white border-[#B39250] shadow-md flex flex-col items-center justify-center gap-2 min-h-[110px]";
+                    } else {
+                        btn.className = "p-4 rounded-2xl border text-center transition-all bg-white text-gray-800 border-gray-200 hover:border-[#B39250] shadow-sm flex flex-col items-center justify-center gap-2 min-h-[110px]";
+                    }
+                }
+            });
+
+            if (type === 'court_and_coach') {
+                const coaches = getActiveCoaches();
+                if (!selectedCoach && coaches.length > 0) selectedCoach = coaches[0];
+                coachSection.classList.remove('hidden');
+            } else {
+                coachSection.classList.add('hidden');
+            }
+
+            renderCoaches();
+            renderTimeSlots();
+        }
+
+        function setStudentCount(count) {
+            studentCount = count;
+            for (let i = 1; i <= 4; i++) {
+                const btn = document.getElementById(`btn-student-${i}`);
+                if (btn) {
+                    if (i === count) {
+                        btn.className = "py-2.5 rounded-2xl font-bold text-xs sm:text-sm border border-[#B39250] bg-[#1A1A1A] text-white shadow-xs";
+                    } else {
+                        btn.className = "py-2.5 rounded-2xl font-bold text-xs sm:text-sm border border-gray-300 bg-white text-gray-800 hover:border-[#B39250]";
+                    }
+                }
+            }
+            renderCoaches();
+            renderTimeSlots();
+        }
+
+        function setBookingDuration(hours) {
+            bookingDuration = hours;
+            for (let i = 1; i <= 4; i++) {
+                const btn = document.getElementById(`btn-dur-${i}`);
+                if (btn) {
+                    if (i === hours) {
+                        btn.className = "py-3 rounded-2xl font-bold text-sm sm:text-base border border-[#B39250] bg-[#1A1A1A] text-white shadow-sm";
+                    } else {
+                        btn.className = "py-3 rounded-2xl font-bold text-sm sm:text-base border border-gray-200 bg-white text-gray-800 hover:border-[#B39250]";
+                    }
+                }
+            }
+            renderTimeSlots();
+        }
+
+        function onDateChange(val) {
+            const maxAllowedDate = "2026-08-31";
+            if (val > maxAllowedDate) {
+                showToast('ขณะนี้เปิดให้จองล่วงหน้าได้ถึงวันที่ 31 สิงหาคม 2569 เท่านั้น', true);
+                selectedDate = maxAllowedDate;
+                document.getElementById('booking-date').value = maxAllowedDate;
+            } else {
+                selectedDate = val;
+            }
+            renderTimeSlots();
+        }
+
+        function onTimeSlotSelect(val) {
+            selectedTime = val;
+        }
+
+        function renderCoaches() {
+            const container = document.getElementById('coach-list-container');
+            if (!container) return;
+            container.innerHTML = '';
+            const activeCoaches = getActiveCoaches();
+
+            activeCoaches.forEach(coach => {
+                const isSelected = selectedCoach && selectedCoach.id === coach.id;
+                const div = document.createElement('div');
+                div.className = `p-3.5 rounded-2xl border text-left transition-all cursor-pointer ${isSelected ? 'border-[#B39250] bg-white ring-2 ring-[#B39250] shadow-sm' : 'border-gray-200 bg-white'}`;
+                div.onclick = () => { selectedCoach = coach; renderCoaches(); renderTimeSlots(); };
+                
+                const coachFeeCalc = coach.price * studentCount;
+
+                div.innerHTML = `
+                    <div class="flex justify-between items-center gap-3">
+                        <div class="flex items-center gap-3">
+                            <img src="${coach.avatar || 'coach1.png'}" onerror="this.src='https://placehold.co/100x100/1A1A1A/B39250?text=COACH';" class="w-12 h-12 rounded-full object-cover border border-[#B39250]/40 shrink-0">
+                            <div>
+                                <div class="flex items-center gap-1.5">
+                                    <span class="font-bold text-gray-900 text-sm sm:text-base">${coach.name}</span>
+                                </div>
+                                <p class="text-xs text-emerald-800 font-medium">${coach.daysText || 'สอนตามตาราง'}</p>
+                                <p class="text-[11px] text-gray-500 font-light mt-0.5">${coach.desc || ''}</p>
+                            </div>
+                        </div>
+                        <div class="text-right shrink-0">
+                            <span class="font-bold text-emerald-700 text-sm sm:text-base block">${coachFeeCalc} ฿/ชม.</span>
+                            <span class="text-[10px] text-gray-400 font-light block">(${coach.price}×${studentCount}คน)</span>
+                        </div>
+                    </div>`;
+                container.appendChild(div);
+            });
+        }
+
+        function isCoachSetAvailable(coachId, dateStr, slotStr) {
+            const key = `${coachId}_${dateStr}`;
+            if (coachCustomAvailability[key] && coachCustomAvailability[key][slotStr] !== undefined) {
+                return coachCustomAvailability[key][slotStr];
+            }
+            const coaches = getActiveCoaches();
+            const coachObj = coaches.find(c => c.id === coachId);
+            if (!coachObj) return false;
+            const parts = dateStr.split('-');
+            const dayOfWeek = new Date(parseInt(parts[0]), parseInt(parts[1])-1, parseInt(parts[2])).getDay();
+            if (!coachObj.availableDays.includes(dayOfWeek)) return false;
+            if (coachId === 'coach3' && dayOfWeek === 5 && parseInt(slotStr.split(':')[0]) < 12) return false;
+            return true;
+        }
+
+        function getGeneratedTimeSlots(duration = 1) {
+            const slots = [];
+            const start = courtOperatingHours.startHour || 6;
+            const end = courtOperatingHours.endHour || 22;
+            
+            for (let h = start; h <= end - duration; h++) {
+                const sHour = h.toString().padStart(2, '0');
+                const eHour = (h + duration).toString().padStart(2, '0');
+                slots.push(`${sHour}:00 - ${eHour}:00`);
+            }
+            return slots;
+        }
+
+        function getSubHourlySlots(slotStr) {
+            const parts = slotStr.split(' - ');
+            if (parts.length < 2) return [slotStr];
+            const startH = parseInt(parts[0].split(':')[0]);
+            const endH = parseInt(parts[1].split(':')[0]);
+            const result = [];
+            for (let h = startH; h < endH; h++) {
+                const s = h.toString().padStart(2, '0') + ':00';
+                const e = (h + 1).toString().padStart(2, '0') + ':00';
+                result.push(`${s} - ${e}`);
+            }
+            return result;
+        }
+
+        function checkSlotAvailability(slotStr) {
+            const subSlots = getSubHourlySlots(slotStr);
+            for (const subSlot of subSlots) {
+                const closureKey = `${selectedDate}_${subSlot}`;
+                if (adminClosedSlots[closureKey]) {
+                    return { available: false, reason: `ปิดสนาม: ${adminClosedSlots[closureKey].reason}` };
+                }
+                const isCourtBooked = bookings.some(b => {
+                    if (b.date !== selectedDate || b.status === 'cancelled') return false;
+                    const bSubSlots = getSubHourlySlots(b.timeSlot);
+                    return bSubSlots.includes(subSlot);
+                });
+                if (isCourtBooked) {
+                    return { available: false, reason: 'สนามติดจองคิวอื่น' };
+                }
+                if (bookingType === 'court_and_coach' && selectedCoach) {
+                    const isCoachAvail = isCoachSetAvailable(selectedCoach.id, selectedDate, subSlot);
+                    const isCoachBooked = bookings.some(b => {
+                        if (b.date !== selectedDate || b.coachId !== selectedCoach.id || b.status === 'cancelled') return false;
+                        const bSubSlots = getSubHourlySlots(b.timeSlot);
+                        return bSubSlots.includes(subSlot);
+                    });
+                    if (!isCoachAvail || isCoachBooked) {
+                        return { available: false, reason: 'โค้ชไม่สะดวก/ติดคิวสอนช่วงเวลานี้' };
+                    }
+                }
+            }
+            return { available: true };
+        }
+
+        function renderTimeSlots() {
+            const select = document.getElementById('time-slot-dropdown');
+            if (!select) return;
+            select.innerHTML = '';
+            const availableSlots = getGeneratedTimeSlots(bookingDuration);
+
+            const courtRate = getCourtHourlyRate(selectedDate);
+            const rateLabel = document.getElementById('court-rate-label');
+            if (rateLabel) rateLabel.innerText = `อัตราสนาม ${courtRate} ฿/ชม.`;
+
+            let settings = safeGetStorage('gallery_settings', { rateKnocker: 300, rateBallMachine: 250 });
+            let serviceExtraRate = 0;
+            if (bookingType === 'court_and_knocker') serviceExtraRate = settings.rateKnocker || 300;
+            if (bookingType === 'court_and_ballmachine') serviceExtraRate = settings.rateBallMachine || 250;
+
+            availableSlots.forEach(slotStr => {
+                const option = document.createElement('option');
+                option.value = slotStr;
+                const status = checkSlotAvailability(slotStr);
+
+                const coachFeePerHour = (bookingType === 'court_and_coach' && selectedCoach) ? (selectedCoach.price * studentCount) : 0;
+                const hourlyTotalPrice = courtRate + coachFeePerHour + serviceExtraRate;
+                const totalPrice = hourlyTotalPrice * bookingDuration;
+
+                if (!status.available) {
+                    option.text = `${slotStr} (${bookingDuration} ชม.) - [🔴 ${status.reason}]`;
+                    option.disabled = true;
+                } else {
+                    option.text = `${slotStr} (${bookingDuration} ชม.) - (🟢 ว่าง) รวม ${totalPrice} บาท`;
+                }
+                if (slotStr === selectedTime) option.selected = true;
+                select.appendChild(option);
+            });
+
+            if (select.options.length > 0 && select.options[select.selectedIndex]?.disabled) {
+                const firstValid = Array.from(select.options).find(o => !o.disabled);
+                selectedTime = firstValid ? firstValid.value : null;
+                if (firstValid) select.value = selectedTime;
+            } else if (select.options.length > 0) {
+                selectedTime = select.value;
+            } else {
+                selectedTime = null;
+            }
+        }
+
+        function goToStep(stepNum) {
+            if (stepNum === 2 && !selectedTime) { showToast('ไม่มีช่วงเวลาที่เลือกหรือสนามไม่ว่าง', true); return; }
+            
+            // Hide all step containers
+            ['step-1-content', 'step-2-content', 'step-3-content', 'step-4-content', 'step-5-pending', 'step-6-success'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.classList.add('hidden');
+            });
+
+            const targetId = stepNum === 5 ? 'step-5-pending' : (stepNum === 6 ? 'step-6-success' : `step-${stepNum}-content`);
+            document.getElementById(targetId)?.classList.remove('hidden');
+
+            for (let i = 1; i <= 4; i++) {
+                const el = document.getElementById(`p-step-${i}`);
+                if (el) {
+                    if (i <= Math.min(stepNum, 4)) {
+                        el.className = "flex items-center gap-1.5 text-[#D4AF37] font-bold";
+                        el.querySelector('span').className = "w-5 h-5 rounded-full flex items-center justify-center text-xs bg-[#B39250] text-black font-bold";
+                    } else {
+                        el.className = "flex items-center gap-1.5 text-gray-400 font-medium";
+                        el.querySelector('span').className = "w-5 h-5 rounded-full flex items-center justify-center text-xs border border-gray-600";
+                    }
+                }
+            }
+            if (stepNum === 3) renderReviewSummary();
+            if (stepNum === 4) startPaymentTimer();
+            if (stepNum !== 4) stopPaymentTimer();
+        }
+
+        function startPaymentTimer() {
+            if (timerInterval) clearInterval(timerInterval);
+            paymentCountdown = 600;
+            updateTimerDisplay();
+            timerInterval = setInterval(() => {
+                paymentCountdown--;
+                if (paymentCountdown <= 0) {
+                    stopPaymentTimer();
+                    showToast('หมดเวลาชำระเงิน กรุณาทำรายการใหม่', true);
+                    resetBooking();
+                } else {
+                    updateTimerDisplay();
+                }
+            }, 1000);
+        }
+
+        function updateTimerDisplay() {
+            const mins = Math.floor(paymentCountdown / 60);
+            const secs = paymentCountdown % 60;
+            const timerEl = document.getElementById('payment-timer');
+            if (timerEl) {
+                timerEl.innerText = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+            }
+        }
+
+        function stopPaymentTimer() {
+            if (timerInterval) {
+                clearInterval(timerInterval);
+                timerInterval = null;
+            }
+        }
+
+        function renderReviewSummary() {
+            const custName = document.getElementById('cust-name').value.trim() || 'คุณลูกค้า';
+            const custPhone = document.getElementById('cust-phone').value.trim() || '08X-XXX-XXXX';
+            const courtRate = getCourtHourlyRate(selectedDate);
+
+            let settings = safeGetStorage('gallery_settings', { rateKnocker: 300, rateBallMachine: 250 });
+            let serviceExtraRate = 0;
+            if (bookingType === 'court_and_knocker') serviceExtraRate = settings.rateKnocker || 300;
+            if (bookingType === 'court_and_ballmachine') serviceExtraRate = settings.rateBallMachine || 250;
+
+            const coachFeePerHour = (bookingType === 'court_and_coach' && selectedCoach) ? (selectedCoach.price * studentCount) : 0;
+            const hourlyTotalPrice = courtRate + coachFeePerHour + serviceExtraRate;
+            const totalPrice = hourlyTotalPrice * bookingDuration;
+
+            document.getElementById('summary-booking-type').innerText = getBookingTypeLabel(bookingType);
+            const coachRow = document.getElementById('summary-[#m-coach-row]');
+            const coachRowElem = document.getElementById('summary-coach-row');
+            if (bookingType === 'court_and_coach' && selectedCoach) {
+                if (coachRowElem) coachRowElem.classList.remove('hidden');
+                document.getElementById('summary-coach-name').innerText = `${selectedCoach.name} (${selectedCoach.price}฿ × ${studentCount}คน = ${coachFeePerHour}฿/ชม.)`;
+            } else { 
+                if (coachRowElem) coachRowElem.classList.add('hidden'); 
+            }
+
+            document.getElementById('summary-date').innerText = formatDateThai(selectedDate);
+            document.getElementById('summary-time').innerText = `${selectedTime} น. (${bookingDuration} ชั่วโมง)`;
+            document.getElementById('summary-customer').innerText = `${custName} (${custPhone})`;
+            document.getElementById('summary-total-price').innerText = `${totalPrice} บาท`;
+            document.getElementById('payment-amount').innerText = `${totalPrice.toFixed(2)} ฿`;
+        }
+
+        function handleSlipSelected(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                const img = new Image();
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    let width = img.width;
+                    let height = img.height;
+                    const maxW = 800;
+                    if (width > maxW) {
+                        height = Math.round((height * maxW) / width);
+                        width = maxW;
+                    }
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+                    pendingSlipBase64 = canvas.toDataURL('image/jpeg', 0.75);
+
+                    const previewImg = document.getElementById('slip-preview-img');
+                    const previewContainer = document.getElementById('slip-preview-container');
+                    if (previewImg && previewContainer) {
+                        previewImg.src = pendingSlipBase64;
+                        previewContainer.classList.remove('hidden');
+                    }
+                };
+                img.src = event.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function submitPendingPayment() {
+            if (!pendingSlipBase64) {
+                showToast('กรุณาแนบรูปสลิปหลักฐานการโอนเงินก่อนส่งแจ้งชำระ', true);
+                return;
+            }
+
+            stopPaymentTimer();
+            const custName = document.getElementById('cust-name').value.trim() || 'คุณลูกค้า';
+            const custPhone = document.getElementById('cust-phone').value.trim() || '08X-XXX-XXXX';
+            const custSkill = document.getElementById('cust-skill').value;
+            const custNote = document.getElementById('cust-note').value.trim();
+
+            const bookingId = 'GLY-' + Math.floor(100000 + Math.random() * 900000);
+            const courtRate = getCourtHourlyRate(selectedDate);
+
+            let settings = safeGetStorage('gallery_settings', { rateKnocker: 300, rateBallMachine: 250 });
+            let serviceExtraRate = 0;
+            if (bookingType === 'court_and_knocker') serviceExtraRate = settings.rateKnocker || 300;
+            if (bookingType === 'court_and_ballmachine') serviceExtraRate = settings.rateBallMachine || 250;
+
+            const coachFeePerHour = (bookingType === 'court_and_coach' && selectedCoach) ? (selectedCoach.price * studentCount) : 0;
+            const courtFeeTotal = (courtRate + serviceExtraRate) * bookingDuration;
+            const coachFeeTotal = coachFeePerHour * bookingDuration;
+            const totalPrice = courtFeeTotal + coachFeeTotal;
+
+            const pendingBooking = {
+                bookingId: bookingId,
+                status: 'pending',
+                bookingType: bookingType,
+                bookingDuration: bookingDuration,
+                studentCount: studentCount,
+                courtId: SINGLE_COURT.id,
+                courtName: SINGLE_COURT.name,
+                courtPrice: courtFeeTotal,
+                coachId: selectedCoach ? selectedCoach.id : null,
+                coachName: selectedCoach ? selectedCoach.name : null,
+                coachPrice: coachFeeTotal,
+                totalPrice: totalPrice,
+                date: selectedDate,
+                timeSlot: selectedTime,
+                bookedBy: custName,
+                customerPhone: custPhone,
+                customerSkill: custSkill,
+                customerNote: custNote,
+                slipImage: pendingSlipBase64,
+                createdAt: new Date().toISOString(),
+                lineUserId: lineProfile.userId || ''
+            };
+
+            bookings.push(pendingBooking);
+            safeSetStorage('gallery_bookings', bookings);
+
+            if (useFirebase && db) {
+                db.collection("bookings").doc(bookingId).set(pendingBooking);
+                currentPendingBookingId = bookingId; // บันทึก ID ไว้รอเช็คสถานะ Real-time จาก Admin
+            }
+
+            document.getElementById('p-booking-id').innerText = bookingId;
+            document.getElementById('p-datetime').innerText = `${formatDateThai(selectedDate)} (${selectedTime} น.)`;
+            document.getElementById('p-total').innerText = `${totalPrice} ฿`;
+
+            goToStep(5);
+            showToast('แจ้งชำระเงินเรียบร้อยแล้ว กำลังรอแอดมินอนุมัติสลิป');
+        }
+
+        function resetBooking() {
+            stopPaymentTimer();
+            pendingSlipBase64 = null;
+            currentPendingBookingId = null;
+            const previewContainer = document.getElementById('slip-preview-container');
+            if (previewContainer) previewContainer.classList.add('hidden');
+            goToStep(1);
+        }
+
+        // --- 3. APP INITIALIZATION & STORAGE LISTENERS ---
+        window.onload = function() {
+            const dateInput = document.getElementById('booking-date');
+            if (dateInput) {
+                dateInput.value = selectedDate;
+                dateInput.min = getTodayStr();
+                dateInput.max = "2026-08-31";
+            }
+
+            setBookingType('court_only');
+            setStudentCount(1);
+            setBookingDuration(1);
+            initLineLIFF();
+
+            if (useFirebase && db) {
+                db.collection("bookings").onSnapshot((snapshot) => {
+                    const loaded = []; 
+                    snapshot.forEach(doc => {
+                        const data = doc.data();
+                        loaded.push({ ...data, status: data.status || 'confirmed' });
+                    });
+                    bookings = loaded; 
+                    safeSetStorage('gallery_bookings', bookings); 
+                    renderTimeSlots();
+
+                    // เช็คสถานะการอนุมัติแบบ Real-time
+                    if (currentPendingBookingId) {
+                        const myBooking = bookings.find(b => b.bookingId === currentPendingBookingId);
+                        // ถ้าแอดมินกดอนุมัติ (status เปลี่ยนเป็น confirmed)
+                        if (myBooking && myBooking.status === 'confirmed') {
+                            // อัปเดตข้อมูลหน้า Success (Step 6)
+                            document.getElementById('success-booking-id').innerText = myBooking.bookingId;
+                            document.getElementById('success-type-desc').innerText = getBookingTypeLabel(myBooking.bookingType);
+                            document.getElementById('s-cust').innerText = `${myBooking.bookedBy} (${myBooking.customerPhone})`;
+                            document.getElementById('s-court').innerText = myBooking.courtName || 'Indoor Tennis Court';
+                            
+                            const sCoachRow = document.getElementById('s-coach-row');
+                            if (myBooking.coachName) {
+                                if (sCoachRow) sCoachRow.classList.remove('hidden');
+                                document.getElementById('s-coach').innerText = myBooking.coachName;
+                            } else {
+                                if (sCoachRow) sCoachRow.classList.add('hidden');
+                            }
+                            
+                            document.getElementById('s-datetime').innerText = `${formatDateThai(myBooking.date)} (${myBooking.timeSlot} น.)`;
+                            document.getElementById('s-total').innerText = `${myBooking.totalPrice} ฿`;
+
+                            // พาผู้ใช้ไปยังหน้า 6 (สำเร็จ)
+                            goToStep(6);
+                            currentPendingBookingId = null; // รีเซ็ตค่าเพื่อหยุดเช็ค
+                            showToast('แอดมินอนุมัติสลิปการจองของคุณเรียบร้อยแล้ว!', false);
+                        }
+                    }
+                });
+                db.collection("admin_closed_slots").onSnapshot((snapshot) => {
+                    const loaded = {}; snapshot.forEach(doc => loaded[doc.id] = doc.data());
+                    adminClosedSlots = loaded; safeSetStorage('gallery_admin_closed_slots', adminClosedSlots); renderTimeSlots();
+                });
+                db.collection("coach_availability").onSnapshot((snapshot) => {
+                    const loaded = {}; snapshot.forEach(doc => loaded[doc.id] = doc.data().slots || {});
+                    coachCustomAvailability = loaded; safeSetStorage('gallery_coach_availability', coachCustomAvailability); renderTimeSlots();
+                });
+                db.collection("settings").doc("court_operating_hours").onSnapshot((doc) => {
+                    if (doc.exists) {
+                        courtOperatingHours = doc.data();
+                        safeSetStorage('gallery_court_operating_hours', courtOperatingHours);
+                        renderTimeSlots();
+                    }
+                });
+            }
+
+            // Sync settings changes dynamically from admin portal
+            window.addEventListener('storage', function(e) {
+                if (e.key === 'gallery_settings' || e.key === 'gallery_court_operating_hours') {
+                    renderCoaches();
+                    renderTimeSlots();
+                }
+            });
+        };
+
+        function initLineLIFF() {
+            if (typeof liff !== 'undefined') {
+                liff.init({ liffId: "2001234567-AbCdEfGh" }).then(() => {
+                    if (liff.isLoggedIn()) {
+                        liff.getProfile().then(profile => {
+                            lineProfile = profile;
+                            if (document.getElementById('cust-name')) document.getElementById('cust-name').value = profile.displayName;
+                            if (document.getElementById('line-user-name')) document.getElementById('line-user-name').innerText = profile.displayName;
+                            if (document.getElementById('line-user-badge')) document.getElementById('line-user-badge').classList.remove('hidden');
+                        });
+                    }
+                }).catch(err => console.log("LIFF Init Fallback"));
+            }
+        }
+    </script>
+</body>
+</html>
