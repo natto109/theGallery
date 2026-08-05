@@ -204,7 +204,7 @@
                 <div class="bg-rose-50/70 p-4 sm:p-6 rounded-3xl border border-rose-200 space-y-4 shadow-sm">
                     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
                         <div>
-                            <h4 class="font-bold text-sm sm:text-base text-rose-950">🔒 บล็อกปิดช่วงเวลาสนาม (คลิกปุ่มเพื่อสลับสถานะ)</h4>
+                            <h4 class="font-bold text-sm sm:text-base text-rose-950">🔒 บล็อกปิดช่วงเวลาสนาม / ยืนยันยกเลิกคิว (คลิกสล็อตเวลา)</h4>
                             <p class="text-xs text-rose-700 font-light mt-0.5">การปิดสนามที่นี่จะส่งผลถึงหน้าจอลูกค้าทุกคนแบบ Real-time ทันที</p>
                         </div>
                         <div class="flex items-center gap-2 w-full sm:w-auto">
@@ -244,11 +244,14 @@
                     </div>
                 </div>
                 
-                <div class="flex justify-end pt-2">
+                <!-- ปุ่มล้างข้อมูลทดสอบ (ซ่อนไว้ตามความต้องการ หากต้องการใช้ให้ลบ Comment ออก) -->
+                <!--
+                <div class="flex justify-end pt-2 mt-4">
                     <button onclick="clearAllTestBookings()" class="px-4 py-2 bg-rose-100 text-rose-700 hover:bg-rose-200 border border-rose-300 rounded-xl text-xs sm:text-sm font-bold transition-all shadow-sm">
                         ⚠️ ล้างคิวการจองในระบบทั้งหมด (Clear Database)
                     </button>
                 </div>
+                -->
             </div>
 
             <!-- TAB 2: COACH VIEW & REALTIME SLOT EDITOR -->
@@ -266,7 +269,7 @@
                 <!-- REALTIME COACH WORK SLOT EDITOR -->
                 <div class="bg-white p-4 sm:p-6 rounded-3xl border border-gray-200 space-y-4 shadow-sm">
                     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-                        <h4 class="font-bold text-sm sm:text-base text-gray-900">🗓️ ตั้งค่าเวลาว่างรับสอนขึ้นระบบ Cloud (คลิกสลับสถานะ)</h4>
+                        <h4 class="font-bold text-sm sm:text-base text-gray-900">🗓️ ตั้งค่าเวลาว่างรับสอน (คลิกสลับสถานะ / คลิกคิวเพื่อยกเลิก)</h4>
                         <div class="flex items-center gap-2 text-xs sm:text-sm w-full sm:w-auto">
                             <span class="text-gray-700 font-bold shrink-0">วันที่:</span>
                             <input type="date" id="coach-schedule-date" onchange="onCoachDateChange()" class="w-full sm:w-auto p-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs sm:text-sm font-light outline-none">
@@ -325,7 +328,7 @@
 
                 <div class="bg-white p-4 sm:p-6 rounded-3xl border border-gray-200 space-y-4 shadow-sm">
                     <div class="flex justify-between items-center">
-                        <h4 class="font-bold text-sm sm:text-base text-gray-900">🗓️ ตารางผังการจองรวม 7 วัน</h4>
+                        <h4 class="font-bold text-sm sm:text-base text-gray-900">🗓️ ตารางผังการจองรวม 7 วัน (คลิกที่บล็อกเวลาเพื่อยกเลิกคิว)</h4>
                         <span class="text-xs text-amber-800 font-bold bg-amber-100 px-3 py-1 rounded-full">มุมมองตารางรวม</span>
                     </div>
 
@@ -564,7 +567,6 @@
         }
 
         // --- 2. GLOBAL STATE VARIABLES & CONFIG ---
-        // (ใช้งาน LocalStorage เฉพาะเก็บสถานะ Session เข้าสู่ระบบ ไม่เก็บข้อมูล Data)
         let userRole = null; 
         try { userRole = JSON.parse(localStorage.getItem('gallery_admin_session')).role; } catch (e) {}
         
@@ -573,7 +575,6 @@
         let adminCloseDate = getTodayStr();
         let weeklyStartMondayStr = getMondayDateStr(new Date());
 
-        // ข้อมูลหลักมาจาก Firebase 100% 
         let rawBookings = [];
         let bookings = [];
         let adminClosedSlots = {};
@@ -684,7 +685,6 @@
 
             const centralCoaches = (typeof window.COACHES_DATA !== 'undefined' && window.COACHES_DATA.length > 0) ? window.COACHES_DATA : defaultCoachesList;
             
-            // Sync with Firebase Settings
             settings.coaches = centralCoaches.map(dc => {
                 const existing = settings.coaches ? settings.coaches.find(sc => sc.id === dc.id || sc.name === dc.name) : null;
                 return existing ? { ...dc, price: existing.price, active: existing.active } : dc;
@@ -798,7 +798,7 @@
 
             hourlySlots.forEach(slotStr => {
                 const key = `${adminCloseDate}_${slotStr}`;
-                const isBooked = bookings.some(b => {
+                const matchedBooking = bookings.find(b => {
                     if (b.date !== adminCloseDate || b.status === 'cancelled') return false;
                     const bSubSlots = getSubHourlySlots(b.timeSlot);
                     return bSubSlots.includes(slotStr);
@@ -806,10 +806,10 @@
                 const isBlocked = !!adminClosedSlots[key];
                 const btn = document.createElement('button');
 
-                if (isBooked) {
-                    btn.disabled = true;
-                    btn.className = "p-3 rounded-2xl border border-gray-200 bg-gray-100 text-gray-400 text-xs font-bold text-center cursor-not-allowed";
-                    btn.innerHTML = `${slotStr.split(' - ')[0]}<br><span class="text-[10px] sm:text-xs text-amber-700 font-bold">🔴 ติดคิวจอง</span>`;
+                if (matchedBooking) {
+                    btn.className = "p-3 rounded-2xl border border-amber-300 bg-amber-50 hover:bg-amber-100 text-amber-900 text-xs font-bold text-center transition-all shadow-sm cursor-pointer";
+                    btn.onclick = () => openDeleteModal(matchedBooking.bookingId);
+                    btn.innerHTML = `${slotStr.split(' - ')[0]}<br><span class="text-[10px] sm:text-xs text-amber-700 font-bold flex items-center justify-center gap-1 mt-1">🔴 ติดคิวจอง <span class="text-red-500 text-sm bg-white rounded-full w-5 h-5 flex items-center justify-center shadow-xs">🗑️</span></span>`;
                 } else if (isBlocked) {
                     btn.className = "p-3 rounded-2xl border border-rose-300 bg-rose-50 text-rose-800 text-xs font-bold text-center transition-all hover:bg-rose-100 shadow-sm";
                     btn.onclick = () => toggleAdminCourtSlot(slotStr);
@@ -979,9 +979,15 @@
             });
         }
 
-        // ฟังชันก์เคลียร์คิวทดสอบ (ลบตรงจาก Firebase)
         function clearAllTestBookings() {
-            if(confirm("คำเตือน: คุณต้องการลบคิวการจองทั้งหมดในระบบ Database ใช่หรือไม่?\n(ข้อมูลจะไม่สามารถกู้คืนได้)")) {
+            const pass = prompt("⚠️ คำเตือนระดับสูง: คุณกำลังจะลบคิวการจองทั้งหมดในระบบ Database!\n\nกรุณากรอกรหัสผ่านแอดมิน (admin123) เพื่อยืนยันการทำรายการ:");
+            if (pass === null) return;
+            if (pass !== 'admin123') {
+                alert("❌ รหัสผ่านไม่ถูกต้อง! ยกเลิกการทำรายการ");
+                return;
+            }
+
+            if(confirm("ยืนยันขั้นตอนสุดท้าย: คุณต้องการลบข้อมูลคิวจองถาวรใช่หรือไม่?\n(ข้อมูลจะไม่สามารถกู้คืนได้)")) {
                 db.collection("bookings").get().then((querySnapshot) => {
                     const batch = db.batch();
                     querySnapshot.forEach((doc) => {
@@ -1067,7 +1073,7 @@
             const hourlySlots = getGeneratedHourlySlots();
 
             hourlySlots.forEach(slotStr => {
-                const isBooked = bookings.some(b => {
+                const matchedBooking = bookings.find(b => {
                     if (b.date !== coachScheduleDate || b.coachId !== coachObj.id || b.status === 'cancelled') return false;
                     const bSubSlots = getSubHourlySlots(b.timeSlot);
                     return bSubSlots.includes(slotStr);
@@ -1075,10 +1081,10 @@
                 const isAvail = isCoachSetAvailable(coachObj.id, coachScheduleDate, slotStr);
                 const btn = document.createElement('button');
 
-                if (isBooked) {
-                    btn.disabled = true;
-                    btn.className = "p-3 rounded-2xl border border-gray-200 bg-gray-100 text-gray-400 text-xs font-bold text-center cursor-not-allowed";
-                    btn.innerHTML = `${slotStr.split(' - ')[0]}<br><span class="text-[10px] sm:text-xs text-amber-800 font-bold">🔒 มีคิวสอน</span>`;
+                if (matchedBooking) {
+                    btn.className = "p-3 rounded-2xl border border-amber-300 bg-amber-50 hover:bg-amber-100 text-amber-900 text-xs font-bold text-center transition-all shadow-sm cursor-pointer";
+                    btn.onclick = () => openDeleteModal(matchedBooking.bookingId);
+                    btn.innerHTML = `${slotStr.split(' - ')[0]}<br><span class="text-[10px] sm:text-xs text-amber-800 font-bold flex items-center justify-center gap-1 mt-1">🔒 มีคิวสอน <span class="text-red-500 text-sm bg-white rounded-full w-5 h-5 flex items-center justify-center shadow-xs">🗑️</span></span>`;
                 } else if (isAvail) {
                     btn.className = "p-3 rounded-2xl border border-emerald-300 bg-emerald-50 text-emerald-800 text-xs font-bold text-center transition-all hover:bg-emerald-100 shadow-sm";
                     btn.onclick = () => toggleCoachSlotAvailability(coachObj.id, coachScheduleDate, slotStr);
@@ -1258,9 +1264,13 @@
 
                         const td = document.createElement('td');
                         td.rowSpan = dur;
-                        td.className = "p-2 border border-[#B39250] bg-amber-50 text-amber-950 text-center font-bold text-xs shadow-xs align-middle";
+                        td.className = "p-2 border border-[#B39250] bg-amber-50 hover:bg-amber-100 transition-colors cursor-pointer text-amber-950 text-center font-bold text-xs shadow-xs align-middle";
+                        td.onclick = () => openDeleteModal(matchedBooking.bookingId);
                         td.innerHTML = `
-                            <p class="font-bold text-amber-900">${matchedBooking.bookedBy}</p>
+                            <div class="flex justify-center items-center gap-1">
+                                <p class="font-bold text-amber-900">${matchedBooking.bookedBy}</p>
+                                <span class="text-red-500 text-xs bg-white rounded-full w-4 h-4 flex items-center justify-center shadow-xs">🗑️</span>
+                            </div>
                             <p class="text-[10px] text-gray-600 font-light">${getBookingTypeDesc(matchedBooking)}</p>
                             <p class="text-[10px] text-emerald-800 font-mono">${matchedBooking.timeSlot}</p>`;
                         tr.appendChild(td);
@@ -1285,7 +1295,6 @@
         window.onload = function() {
             initSession();
 
-            // ใช้ onSnapshot ดึงข้อมูลเรียลไทม์จาก Firebase ตลอดเวลา โดยไม่ต้องใช้ LocalStorage อีกเลย
             if (db) {
                 db.collection("bookings").onSnapshot((snapshot) => {
                     const loaded = []; 
